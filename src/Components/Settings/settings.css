@@ -1,0 +1,26 @@
+.panel-settings{
+    /* width: 100%;
+    height: 100vh;
+    overflow-y: scroll; */
+}
+
+.panel-settings .user-info{
+    /* width: 100%;
+    height: 20%;
+    margin-bottom: 20px;
+    text-align: center; */
+}
+
+.panel-settings .user-info .avatar{
+    /* width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    height: 80%;
+    margin-bottom: 10px; */
+}
+
+.panel-settings .user-info .avatar img{
+    /* width: 100%;
+    height: 100%;
+    border-radius: 50% */
+}

@@ -1,0 +1,13 @@
+.dashboard-screen .ant-layout .ant-layout-sider .avatar {
+  height: 100px;
+  width: 100px;
+  margin: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.dashboard-screen .ant-layout .ant-layout-sider .avatar img {
+  height: 100%;
+  width: 100%;
+  border-radius: 50%;
+}
