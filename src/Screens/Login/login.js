@@ -9,20 +9,24 @@ class Login extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      currentUser:''
+      currentUser: ""
     };
   }
 
   handleLoginWithFb = () => {
-     firebase
+    firebase
       .auth()
       .signInWithPopup(provider)
-      .then(function(result) {
-        var token = result.credential.accessToken;
-        console.log("token=>",token);
-        var user = result.user;
-        console.log("user=>",user);
-        // ...
+      .then(result => {
+        console.log(result.user);
+        const currentAuth = {
+          userName: result.user.displayName,
+            avatar: result.user.photoURL,
+            uid: result.user.uid
+
+        }
+        localStorage["eyeOnEye"] = JSON.stringify(currentAuth)
+        this.props.handleLogin(result.user);
       })
       .catch(function(error) {
         // Handle Errors here.
@@ -41,12 +45,14 @@ class Login extends Component {
       <div className="login-screen">
         <div className="login-inner">
           <div className="eye-logo">
-            <img src={eyeLogo} style={{width:"120px",height:"120px"}}/>
+            <img src={eyeLogo} style={{ width: "120px", height: "120px" }} />
           </div>
           <div className="brand">
-            <h1 className="brand-name" style={{marginBottom:"0px"}}>Eye on Eye</h1>
+            <h1 className="brand-name" style={{ marginBottom: "0px" }}>
+              Eye on Eye
+            </h1>
             <h2>Meetings</h2>
-            <h4 style={{fontWeight:1000}}>LEARN. LEAD. CONNECT</h4>
+            <h4 style={{ fontWeight: 1000 }}>LEARN. LEAD. CONNECT</h4>
           </div>
           <div className="fb-login">
             <Button type="primary" block onClick={this.handleLoginWithFb}>

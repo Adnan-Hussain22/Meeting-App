@@ -6,8 +6,88 @@
   margin-bottom: 20px;
 }
 
+.dashboard-screen .dashboard-header {
+  background-color: #112335;
+  padding: 5px;
+}
+
+.dashboard-screen .dashboard-header .header-menu {
+  width: 200px !important;
+  z-index: 1;
+}
+
+.dashboard-screen .dashboard-header .dash-header .menu-hamburger {
+  float: right;
+  position: relative;
+  right: 40px;
+  z-index: 1;
+  color: white;
+  font-size: 150%;
+  cursor: pointer;
+}
+
+.dashboard-screen .dashboard-header .dash-header .menu-hamburger ul {
+  box-shadow: 0px 0px 4px 1px #dacfcf;
+  border-radius: 5px;
+  position: absolute;
+  left: -180px;
+}
+
+.dashboard-screen
+  .dashboard-header
+  .dash-header
+  .menu-hamburger
+  ul
+  li.ant-menu-item-selected {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border-right: 3px solid #1890ff;
+}
+
+.dashboard-screen .dashboard-header .dash-header .menu-hamburger ul li:hover {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border-right: 3px solid #1890ff;
+}
+
 .dashboard-screen .ant-layout .ant-layout-sider .avatar img {
   height: 100%;
   width: 100%;
   border-radius: 50%;
+}
+
+.dashboard-screen .ant-layout .ant-layout-content > div {
+  padding-bottom: 50px !important;
+}
+
+.dashboard-screen .ant-layout-sider .ant-menu.ant-menu-light {
+  background-color: #001529;
+}
+
+.dashboard-screen .ant-layout-sider .ant-menu.ant-menu-light .ant-menu-item {
+  color: #9b9bd4;
+}
+
+.dashboard-screen
+  .ant-layout-sider
+  .ant-menu.ant-menu-light
+  .ant-menu-item.ant-menu-item-selected {
+  background-color: white;
+  color: #1890ff;
+}
+
+.dashboard-screen
+  .ant-layout-sider
+  .ant-menu.ant-menu-light
+  .ant-menu-item.ant-menu-item-selected:hover {
+  border-right: 0px;
+}
+
+.dashboard-screen
+  .ant-layout-sider
+  .ant-menu.ant-menu-light
+  .ant-menu-item:hover {
+  background-color: white;
+  color: #1890ff;
+  border-right: 3px solid #1890ff;
 }

@@ -11,8 +11,15 @@ import {
   Checkbox,
   Modal
 } from "antd";
+import {
+  withScriptjs,
+  withGoogleMap,
+  GoogleMap,
+  Marker
+} from "react-google-maps";
 import "antd/dist/antd.css";
 import "./wizard.css";
+import firebase, { fireStore } from "../../Config/firebase";
 const FormItem = Form.Item;
 const Step = Steps.Step;
 const CheckboxGroup = Checkbox.Group;
@@ -22,7 +29,7 @@ class Profile extends Component {
     this.state = {
       imageUrl: "",
       step: 1,
-      totalSteps: 3,
+      totalSteps: 4,
       previewVisible: false,
       previewImage: "",
       loading: false,
@@ -31,10 +38,10 @@ class Profile extends Component {
       Beverages: [],
       Durations: [],
       nextStep: false,
-      fileList: []
+      fileList: [],
+      coords: null
     };
   }
-
 
   //Method to preview the image on the model
   handlePreview = file => {
@@ -45,9 +52,9 @@ class Profile extends Component {
   };
 
   //Method to get the image in base64 from file reader
-  getBase64(img, callback, info) {
+  getBase64(img, callback) {
     const reader = new FileReader();
-    reader.addEventListener("load", () => callback(reader.result, info));
+    reader.addEventListener("load", () => callback(reader.result, img));
     reader.readAsDataURL(img);
   }
 
@@ -67,22 +74,15 @@ class Profile extends Component {
   handleAvatarChange = info => {
     const { fileList } = this.state;
     console.log("handleAvatarChange", info.file);
-    // this.setState({
-    //   fileList: {
-    //     name: fileList[fileList.length - 1].name,
-    //     url:fileList[fileList.length - 1].thumbUrl,
-    //     status:"done",
-    //     uid:(fileList.length - 2)
-    //   }
-    // });
     if (info.file.status === "uploading") {
       this.setState({ loading: true });
-      this.getBase64(info.file.originFileObj, this.getImage, info.file);
+      this.getBase64(info.file.originFileObj, this.getImage);
       return;
     }
 
     if (info.file.status === "removed") {
       const newArray = fileList.filter(elem => !(elem.uid === info.file.uid));
+      console.log("NewImageArray=>", newArray);
       this.setState({ fileList: newArray });
     }
 
@@ -92,12 +92,21 @@ class Profile extends Component {
     // }
   };
 
+  handleRemoveImageFromStorage = url => {
+    console.log("handleRemoveImageFromStorage", url);
+    const imgRef = firebase.storage().refFromURL(url);
+    imgRef
+      .delete()
+      .then(() => {})
+      .catch(err => {
+        console.log(err);
+      });
+  };
+
   handleNextStep = () => {
     const { step, totalSteps } = this.state;
     if (step < totalSteps) this.setState({ step: step + 1, nextStep: false });
   };
-
-  handleSaveSteps = () => {};
 
   handlePreview = file => {
     console.log(file);
@@ -108,32 +117,21 @@ class Profile extends Component {
   };
 
   //Method to get the image as base64 from 64 method and save in the state
-  getImage = (filePath, info) => {
-    const { images, fileList } = this.state;
+  getImage = (base64, imageBlob) => {
+    console.log("getImage");
+    const { fileList } = this.state;
     this.setState({
       fileList: fileList.concat([
         {
-          name: info.name,
-          url: filePath,
+          name: imageBlob.name,
+          url: base64,
           status: "done",
-          uid: fileList.length - 1
+          uid: fileList.length - 1,
+          imageBlob
         }
       ]),
       loading: false
     });
-    // let flag = true;
-    // for (let i = 0; i < images.length; i++) {
-    //   if (images[i].filePath === filePath) {
-    //     flag = false;
-    //     break;
-    //   }
-    // }
-
-    // if (flag)
-    // this.setState({
-    //   loading: false,
-    //   images: images.concat([{ filePath, id: info.uid }])
-    // });
   };
 
   handleCustomRequest = e => {
@@ -150,6 +148,16 @@ class Profile extends Component {
     this.setState({ Durations: checkedValues });
   };
 
+  handleSetMapPosition = () => {
+    navigator.geolocation.getCurrentPosition(position => {
+      this.setState({ coords: position.coords });
+    });
+  };
+
+  handleUpdateMapCoords = ({ latitude, longitude }) => {
+    this.setState({ coords: { latitude, longitude } });
+  };
+
   //Method to save the current step and enable the next button
   handleSaveStep = e => {
     const { step } = this.state;
@@ -164,6 +172,10 @@ class Profile extends Component {
       }
       case 3: {
         this.handleSaveStep3(e);
+        break;
+      }
+      case 4: {
+        this.handleSaveStep4(e);
         break;
       }
     }
@@ -188,7 +200,11 @@ class Profile extends Component {
   //Method to validate and save step 3
   handleSaveStep3 = e => {
     const { Beverages, Durations } = this.state;
-    if (Beverages.length && Durations.length) console.log("Save all the data");
+    if (Beverages.length && Durations.length) this.setState({ nextStep: true });
+  };
+
+  handleSaveStep4 = e => {
+    if (this.state.coords) this.handleSaveAllData();
   };
 
   handelUploadedBundle = info => {
@@ -198,6 +214,51 @@ class Profile extends Component {
     } else if (info.file.status === "error") {
     }
   };
+
+  handleSaveAllData = async () => {
+    const {
+      nickName,
+      contact,
+      fileList,
+      Beverages,
+      Durations,
+      coords
+    } = this.state;
+    let images = [];
+    for (let i = 0; i < fileList.length; i++) {
+      const url = await this.SaveImagesToStorage(fileList[i].imageBlob);
+      images.push(url);
+    }
+    const obj = {
+      nickName,
+      contact,
+      images: images,
+      interest: Beverages,
+      durations: Durations,
+      coords: coords
+    };
+    console.log(obj);
+    const eyeOnEye = JSON.parse(localStorage.getItem("eyeOnEye"));
+    fireStore
+      .collection("usersProfile")
+      .doc(eyeOnEye.currentAuth)
+      .set(obj)
+      .then(() => {})
+      .catch(err => {
+        console.log("Error While Uploading Data => ", err);
+      });
+  };
+
+  async SaveImagesToStorage(imageBlob) {
+    const storageRef = firebase.storage().ref();
+    const imageRef = storageRef.child("UserImages/" + imageBlob.name);
+    try {
+      const snapshot = await imageRef.put(imageBlob);
+      return await snapshot.ref.getDownloadURL();
+    } catch (err) {
+      console.log(err);
+    }
+  }
 
   render() {
     const { step, nextStep } = this.state;
@@ -228,16 +289,30 @@ class Profile extends Component {
   }
 
   renderSteps = step => {
-    return (
-      <div>
-        {step === 1 && this.renderUserInfo()}
-        {step === 2 && this.renderUserImages()}
-        {step === 3 && this.renderUserInterest()}
-      </div>
-    );
+    return <div>{this.getCurrentStep(step)}</div>;
   };
 
-  renderWizard = (current) => {
+  //Method to get the current step UI based on the step no
+  getCurrentStep = step => {
+    console.log("getting current step=>", step);
+    switch (step) {
+      case 1: {
+        return this.renderUserInfo();
+      }
+      case 2: {
+        return this.renderUserImages();
+      }
+      case 3: {
+        return this.renderUserInterest();
+      }
+      case 4: {
+        this.handleSetMapPosition();
+        return this.renderMap();
+      }
+    }
+  };
+
+  renderWizard = current => {
     const { step } = this.state;
     return (
       <div className="wizard-steps" style={{ marginBottom: "20px" }}>
@@ -373,6 +448,51 @@ class Profile extends Component {
       </div>
     );
   };
+
+  renderMap = () => {
+    const { coords } = this.state;
+    return (
+      <div className="map-container">
+        <h5>Select Your Location</h5>
+        {console.log("renderMap", coords)}
+        <div className="map">
+          {coords && (
+            <MyMapComponent
+              isMarkerShown
+              googleMapURL="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry,drawing,places"
+              loadingElement={<div style={{ height: `100%` }} />}
+              containerElement={<div style={{ height: `100%` }} />}
+              mapElement={<div style={{ height: `100%` }} />}
+              coords={coords}
+              updateCoords={this.handleUpdateMapCoords}
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
 }
+
+const MyMapComponent = withScriptjs(
+  withGoogleMap(props => (
+    <GoogleMap
+      defaultZoom={30}
+      center={{ lat: props.coords.latitude, lng: props.coords.longitude }}
+    >
+      {props.isMarkerShown && (
+        <Marker
+          position={{ lat: props.coords.latitude, lng: props.coords.longitude }}
+          draggable={true}
+          onDragEnd={position => {
+            props.updateCoords({
+              latitude: position.latLng.lat(),
+              longitude: position.latLng.lng()
+            });
+          }}
+        />
+      )}
+    </GoogleMap>
+  ))
+);
 
 export default Profile;
