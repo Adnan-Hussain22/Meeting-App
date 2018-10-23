@@ -2,15 +2,12 @@ import React, { Component } from "react";
 import Login from "./Screens/Login/login";
 import firebase, { fireStore } from "./Config/firebase";
 import Dasboard from "./Screens/Dasboard/Dasboard";
-const provider = new firebase.auth.FacebookAuthProvider();
 class App extends Component {
   constructor(props) {
     super();
     this.state = {
       // set the current user if the user is authenticated or set to null
-      currentAuth: localStorage.getItem("eyeOnEye")
-        ? JSON.parse(localStorage.getItem("eyeOnEye"))
-        : null
+      currentAuth: {uid:'12312y78y87y'}
     };
   }
 

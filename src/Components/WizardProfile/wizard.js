@@ -241,9 +241,9 @@ class Profile extends Component {
     const eyeOnEye = JSON.parse(localStorage.getItem("eyeOnEye"));
     fireStore
       .collection("usersProfile")
-      .doc(eyeOnEye.currentAuth)
+      .doc(eyeOnEye.uid)
       .set(obj)
-      .then(() => {})
+      .then(() => {this.props.handleSetProfile()})
       .catch(err => {
         console.log("Error While Uploading Data => ", err);
       });

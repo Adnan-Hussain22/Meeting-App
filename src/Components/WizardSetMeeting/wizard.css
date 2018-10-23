@@ -1,0 +1,105 @@
+.card-container .cards-deck > div {
+  width: 290px !important;
+  height: 310px !important;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card-container .cards-deck > div > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.card-container .user-card {
+  width: 100%;
+  height: 100%;
+}
+
+.card-container .user-card .ant-card-cover {
+  height: 200px;
+}
+
+.card-container .user-card .ant-card-cover .ant-carousel,
+.slick-slider.slick-initialized,
+.slick-list,
+.slick-track,
+.slick-slide,
+img {
+  height: 100%;
+  width: 100%;
+}
+
+.slick-slide div {
+  height: 100%;
+  width: 100%;
+}
+
+.card-container .user-card .ant-card-body {
+  height: 100px;
+  position: relative;
+  text-align: center;
+}
+
+.card-container .user-card .ant-card-body .cancel-user {
+  width: 30px;
+  position: absolute;
+  top: 35px;
+  left: 10px;
+}
+
+.card-container .user-card .ant-card-body .accept-user {
+  width: 30px;
+  position: absolute;
+  top: 35px;
+  right: 10px;
+}
+
+.card-container .user-card .ant-card-body .cancel-user img {
+  width: 100%;
+  height: 100%;
+}
+
+.card-container .user-card .ant-card-body .accept-user img {
+  width: 100%;
+  height: 100%;
+}
+
+.meeting-points .vanues-list {
+  list-style: none;
+  margin-top: 40px;
+  padding: 0px;
+}
+
+.meeting-points .vanues-list li {
+  display: inline-block;
+  margin-right: 10px;
+  margin-left: 10px;
+  margin-bottom: 20px;
+  width: 180px;
+}
+
+.meeting-points .vanues-list li .ant-card-body {
+  cursor: pointer;
+}
+
+.meeting-points .vanues-list li .ant-card {
+  box-shadow: 0px 0px 5px 1px rgba(223, 222, 222, 0.8);
+  border-radius: 10px;
+}
+
+.mettingPlace-modal .ant-modal-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-height: 300px;
+}
+
+.mettingPlace-modal .ant-modal-body {
+  max-height: 250px;
+}
+
+.select-date .datetime-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}

@@ -1,11 +1,13 @@
 import React, { Component } from "react";
-import { Card, Button } from "antd";
+import { Button } from "antd";
 import "antd/dist/antd.css";
 import "./dashboard.css";
-import Wizard from "../../Components/Wizard/wizard";
+import WizardProfile from "../../Components/WizardProfile/wizard";
 import defaultAvatar from "../../Helpers/Images/default Avatar.jpg";
 import firebase, { fireStore } from "../../Config/firebase";
 import { Layout, Menu, Icon } from "antd";
+import Card from "../../Components/Card/card";
+import WizardSetMeeting from '../../Components/WizardSetMeeting/wizard';
 const { SubMenu } = Menu;
 const { Header, Content, Footer, Sider } = Layout;
 class Dasboard extends Component {
@@ -13,25 +15,29 @@ class Dasboard extends Component {
     super(props);
     this.state = {
       currentAuth: { ...props.currentAuth },
-      menuSelected: "1",
+      menuSelected: "2",
       headerMenu: false,
-      profileSet: false,
+      profileSet: true,
       avatar: ""
     };
   }
 
   componentDidMount() {
-    const { currentAuth } = this.state;
-    if (currentAuth) {
-      const userRef = fireStore.collection("usersProfile").doc(currentAuth.uid);
-      userRef.get().then(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          this.setState({ profileSet: true, avatar: data.images[0] });
-        }
-      });
-    }
+    // const { currentAuth } = this.state;
+    // if (currentAuth) {
+    //   const userRef = fireStore.collection("usersProfile").doc(currentAuth.uid);
+    //   userRef.get().then(doc => {
+    //     if (doc.exists) {
+    //       const data = doc.data();
+    //       this.setState({ profileSet: true, avatar: data.images[0] });
+    //     }
+    //   });
+    // }
   }
+
+  handleSetProfile = () => {
+    this.setState({ profileSet: true });
+  };
 
   handleShowHeaderMenu = () => {
     const { headerMenu } = this.state;
@@ -49,8 +55,11 @@ class Dasboard extends Component {
   //Method to render the dashboard
   renderDashboard = () => {
     const { currentAuth, profileSet, menuSelected, avatar } = this.state;
-    const avatarImg = avatar ? avatar : 
-    (currentAuth.avatar ? currentAuth.avatar : defaultAvatar)
+    const avatarImg = avatar
+      ? avatar
+      : currentAuth.avatar
+        ? currentAuth.avatar
+        : defaultAvatar;
     return (
       <Layout>
         <Sider
@@ -64,9 +73,7 @@ class Dasboard extends Component {
           }}
         >
           <div className="avatar">
-            <img
-              src={avatarImg}
-            />
+            <img src={avatarImg} />
           </div>
           <div>
             <h4 style={{ color: "white", textAlign: "center" }}>
@@ -83,16 +90,8 @@ class Dasboard extends Component {
               <span className="nav-text">Profile Info</span>
             </Menu.Item>
             <Menu.Item key="2">
-              <Icon type="video-camera" />
-              <span className="nav-text">Menu No 2</span>
-            </Menu.Item>
-            <Menu.Item key="3">
-              <Icon type="upload" />
-              <span className="nav-text">Menu No 3</span>
-            </Menu.Item>
-            <Menu.Item key="4">
-              <Icon type="user" />
-              <span className="nav-text">Menu No 4</span>
+              <Icon type="team" theme="outlined" />
+              <span className="nav-text">Set a Meeting</span>
             </Menu.Item>
           </Menu>
         </Sider>
@@ -100,8 +99,10 @@ class Dasboard extends Component {
           <Header className="dashboard-header">{this.renderHeader()}</Header>
           <Content style={{ margin: "24px 16px 0" }}>
             <div style={{ padding: 24, background: "#fff", minHeight: 360 }}>
-              {!profileSet && <Wizard />}
-              {profileSet && <h2 style={{textAlign:'center'}}>You have already set the profile settings</h2>}
+              {!profileSet && (
+                <WizardProfile handleSetProfile={this.handleSetProfile} />
+              )}
+              {profileSet && <WizardSetMeeting/>}
             </div>
           </Content>
           <Footer style={{ textAlign: "center" }}>
@@ -131,11 +132,11 @@ class Dasboard extends Component {
             className="header-menu"
           >
             <Menu.Item key="1" onClick={this.props.handleLogout}>
-            <Icon type="poweroff" theme="outlined" />
+              <Icon type="poweroff" theme="outlined" />
               Logout
             </Menu.Item>
             <Menu.Item key="2">
-            <Icon type="eye" theme="outlined" />
+              <Icon type="eye" theme="outlined" />
               Some other menu
             </Menu.Item>
           </Menu>
