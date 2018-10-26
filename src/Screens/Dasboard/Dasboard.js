@@ -7,7 +7,7 @@ import defaultAvatar from "../../Helpers/Images/default Avatar.jpg";
 import firebase, { fireStore } from "../../Config/firebase";
 import { Layout, Menu, Icon } from "antd";
 import Card from "../../Components/Card/card";
-import WizardSetMeeting from '../../Components/WizardSetMeeting/wizard';
+import WizardSetMeeting from "../../Components/WizardSetMeeting/wizard";
 const { SubMenu } = Menu;
 const { Header, Content, Footer, Sider } = Layout;
 class Dasboard extends Component {
@@ -102,7 +102,7 @@ class Dasboard extends Component {
               {!profileSet && (
                 <WizardProfile handleSetProfile={this.handleSetProfile} />
               )}
-              {profileSet && <WizardSetMeeting/>}
+              {profileSet && <WizardSetMeeting />}
             </div>
           </Content>
           <Footer style={{ textAlign: "center" }}>

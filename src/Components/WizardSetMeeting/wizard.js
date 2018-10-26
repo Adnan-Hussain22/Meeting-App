@@ -3,6 +3,13 @@ import { Steps, Input, Button, Modal, Icon, Carousel, DatePicker } from "antd";
 import { Card as AntdCard } from "antd";
 import { Card as DeckCard } from "react-swipe-deck";
 import {
+  withGoogleMap,
+  GoogleMap,
+  Marker,
+  withScriptjs,
+  DirectionsRenderer
+} from "react-google-maps";
+import {
   ActionCreater,
   NotificationCreater
 } from "../../Helpers/Actions/action";
@@ -17,13 +24,15 @@ const Step = Steps.Step;
 const Search = Input.Search;
 const { Meta } = AntdCard;
 const apiEndPoint = `https://api.foursquare.com/v2/venues`;
+/* eslint-disable no-undef */
 class SetMeeting extends Component {
   constructor(props) {
     super(props);
     this.state = {
       totalSteps: 3,
-      currentStep: 1,
+      currentStep: 2,
       users: null,
+      currentUserdata: null,
       meetupOne: null,
       searchPlace: "",
       meetingPoints: [],
@@ -38,26 +47,37 @@ class SetMeeting extends Component {
     };
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     NotificationCreater(
       "info",
       `Welcome to set a meeting module`,
       `A 3 steps easy process in which you have to select and save different steps`
     );
     this.handleFetchMeetingPlaces();
+    await this.handleFetchCurrentAuthDataFireStore();
+    await this.handleFetchUsers();
   }
 
+  handleFetchCurrentAuthDataFireStore = async () => {
+    const userProfileRef = fireStore.collection("usersProfile");
+    const localStorageData = JSON.parse(localStorage["eyeOnEye"]);
+    const currentUserdata = (await userProfileRef
+      .doc(localStorageData.uid)
+      .get()).data();
+    this.setState({
+      currentUserdata: { ...currentUserdata, uid: localStorageData.uid }
+    });
+  };
+
   handleFetchUsers = async () => {
+    const { currentUserdata } = this.state;
     const users = [];
     const collectionRef = fireStore.collection("usersProfile");
     try {
-      const currentUserdata = (await collectionRef
-        .doc("4PG5PIkaFSQRjL9BvfemWO7HYGD2")
-        .get()).data();
-
       const usersSnapshot = await collectionRef.get();
+      console.log(currentUserdata.uid);
       usersSnapshot.forEach(doc => {
-        if (doc.id !== "4PG5PIkaFSQRjL9BvfemWO7HYGD2") {
+        if (doc.id !== currentUserdata.uid) {
           const data = doc.data();
           const interest = data["interest"];
           const durations = data["durations"];
@@ -75,7 +95,13 @@ class SetMeeting extends Component {
             }
           }
 
-          if (hasInterest && hasDurations) users.push(data);
+          if (
+            hasInterest &&
+            hasDurations &&
+            this.getDistance(data.coords, currentUserdata.coords) <= 5
+          ) {
+            users.push(data);
+          }
         }
       });
     } catch (err) {
@@ -122,7 +148,11 @@ class SetMeeting extends Component {
   handleCloseModel = () => {
     const { submitPlaceLoading } = this.state;
     if (!submitPlaceLoading)
-      this.setState({ isOpenModal: false, selectedMeetingPoint: null });
+      this.setState({
+        isOpenModal: false,
+        selectedMeetingPoint: null,
+        directions: null
+      });
   };
 
   handleFetchMeetingPlaces = () => {
@@ -154,10 +184,10 @@ class SetMeeting extends Component {
     modal["location"] = meetingPoints[index].location.address
       ? meetingPoints[index].location.address
       : "";
-    meetingPoints[index].location.city;
+    modal["isMap"] = false;
+    // meetingPoints[index].location.city;
     console.log(modal);
     this.setState({ modal, isOpenModal: true, selectedMeetingPoint: index });
-
     this.handleFetchPhotos(id);
   };
 
@@ -179,9 +209,7 @@ class SetMeeting extends Component {
             const imgUrl = `${item.prefix}${item.height}x${item.width}${
               item.suffix
             }`;
-            photos.push(
-              <img src={imgUrl} style={{ width: 300, height: 300 }} />
-            );
+            photos.push(<img src={imgUrl} />);
           }
           modal["photos"] = photos.length ? photos : null;
           this.setState({ modal });
@@ -237,11 +265,11 @@ class SetMeeting extends Component {
     const { currentStep } = this.state;
     switch (currentStep) {
       case 1: {
-        this.handleSaveStep1(e);
+        this.handleSaveStep1Coords(e);
         break;
       }
       case 2: {
-        this.handleSaveStep2(e);
+        this.handleSaveStep2Coords(e);
         break;
       }
       case 3: {
@@ -251,7 +279,7 @@ class SetMeeting extends Component {
     }
   };
 
-  handleSaveStep1 = e => {
+  handleSaveStep1Coords = e => {
     if (this.state.meetupOne) this.setState({ nextStep: true });
     else {
       NotificationCreater(
@@ -262,7 +290,7 @@ class SetMeeting extends Component {
     }
   };
 
-  handleSaveStep2 = e => {
+  handleSaveStep2Coords = e => {
     const { meetingLocation } = this.state;
     if (meetingLocation) this.setState({ nextStep: true });
     else {
@@ -335,6 +363,63 @@ class SetMeeting extends Component {
       });
   };
 
+  handleGetMap = () => {
+    const { modal } = this.state;
+    modal["isMap"] = true;
+    this.setState({ modal });
+  };
+
+  handleGetDirections = () => {
+    const { currentUserdata, meetingPoints, selectedMeetingPoint } = this.state;
+    const DirectionsService = new google.maps.DirectionsService();
+    console.log("Postion one=>", currentUserdata.coords);
+    console.log("Postion two=>", {
+      latitude: meetingPoints[selectedMeetingPoint].location.lat,
+      longitude: meetingPoints[selectedMeetingPoint].location.lng
+    });
+    DirectionsService.route(
+      {
+        origin: new google.maps.LatLng(
+          currentUserdata.coords.latitude,
+          currentUserdata.coords.longitude
+        ),
+        destination: new google.maps.LatLng(
+          meetingPoints[selectedMeetingPoint].location.lat,
+          meetingPoints[selectedMeetingPoint].location.lng
+        ),
+        travelMode: google.maps.TravelMode.DRIVING
+      },
+      (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK) {
+          this.setState({
+            directions: result
+          });
+        } else {
+          alert("Sorry! Can't calculate directions!");
+        }
+      }
+    );
+  };
+
+  rad = x => {
+    return (x * Math.PI) / 180;
+  };
+
+  getDistance = (p1Coords, p2Coords) => {
+    var R = 6378137; // Earth’s mean radius in meter
+    var dLat = this.rad(p2Coords.latitude - p1Coords.latitude);
+    var dLong = this.rad(p2Coords.longitude - p1Coords.longitude);
+    var a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.rad(p1Coords.longitude)) *
+        Math.cos(this.rad(p2Coords.longitude)) *
+        Math.sin(dLong / 2) *
+        Math.sin(dLong / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    var d = R * c;
+    return Math.ceil(d) / 1000; // returns the distance in KM
+  };
+
   render() {
     const { currentStep, totalSteps, nextStep } = this.state;
     return (
@@ -372,7 +457,6 @@ class SetMeeting extends Component {
   getCurrentStep = step => {
     switch (step) {
       case 1: {
-        this.handleFetchUsers();
         return this.renderUsers();
       }
       case 2: {
@@ -525,9 +609,9 @@ class SetMeeting extends Component {
       <Modal
         visible={isOpenModal}
         title={
-          modal
+          modal && !modal.isMap
             ? modal.title + (modal.location ? ` (${modal.location})` : "")
-            : ""
+            : "Direction of your locations"
         }
         onOk={this.handleCloseModel}
         onCancel={this.handleCloseModel}
@@ -536,6 +620,15 @@ class SetMeeting extends Component {
           <Button key="back" onClick={this.handleCloseModel}>
             Back
           </Button>,
+          !modal.isMap ? (
+            <Button key="getDirection" onClick={this.handleGetMap}>
+              Open Map
+            </Button>
+          ) : (
+            <Button key="getDirection" onClick={this.handleGetDirections}>
+              Get Directions
+            </Button>
+          ),
           <Button
             key="submit"
             type="primary"
@@ -546,13 +639,63 @@ class SetMeeting extends Component {
           </Button>
         ]}
       >
-        {modal.photos ? (
-          modal.photos[0]
-        ) : (
-          <h5 style={{ textAlign: "center" }}>No Photos Available</h5>
-        )}
+        {!modal.isMap && this.renderPhotos(modal)}
+        {modal.isMap && this.renderMap()}
       </Modal>
     );
   };
+
+  renderPhotos = modal => {
+    return modal.photos ? (
+      modal.photos[0]
+    ) : (
+      <h5 style={{ textAlign: "center" }}>No Photos Available</h5>
+    );
+  };
+
+  renderMap = () => {
+    const {
+      directions,
+      currentUserdata,
+      meetingPoints,
+      selectedMeetingPoint
+    } = this.state;
+    return (
+      <div className="direction-map" style={{ height: "300px", width: "100%" }}>
+        {selectedMeetingPoint != null && (
+          <MapComponent
+            isMarkerShown
+            googleMapURL="https://maps.googleapis.com/maps/api/js?key=&v=3.exp&libraries=geometry,drawing,places"
+            loadingElement={<div style={{ height: `100%` }} />}
+            containerElement={<div style={{ height: `100%` }} />}
+            mapElement={<div style={{ height: `100%` }} />}
+            directions={directions}
+            position1={currentUserdata.coords}
+            position2={{
+              latitude: meetingPoints[selectedMeetingPoint].location.lat,
+              longitude: meetingPoints[selectedMeetingPoint].location.lng
+            }}
+          />
+        )}
+      </div>
+    );
+  };
 }
+
+const MapComponent = withScriptjs(
+  withGoogleMap(props => (
+    <GoogleMap
+      defaultZoom={14}
+      center={{
+        lat: props.position1.latitude,
+        lng: props.position1.longitude
+      }}
+    >
+      {console.log(props.position1, props.position2)}
+
+      {props.directions && <DirectionsRenderer directions={props.directions} />}
+    </GoogleMap>
+  ))
+);
+
 export default SetMeeting;

@@ -7,7 +7,7 @@ class App extends Component {
     super();
     this.state = {
       // set the current user if the user is authenticated or set to null
-      currentAuth: {uid:'12312y78y87y'}
+      currentAuth: localStorage["eyeOnEye"] ? JSON.parse(localStorage["eyeOnEye"]):null
     };
   }
 
