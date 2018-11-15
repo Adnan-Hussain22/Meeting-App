@@ -1,4 +1,6 @@
 import React, { Component } from "react";
+import { connect } from "react-redux";
+import { authActions } from "../../Redux/Actions";
 import { Steps, Input, Button, Modal, Icon, Carousel, DatePicker } from "antd";
 import { Card as AntdCard } from "antd";
 import { Card as DeckCard } from "react-swipe-deck";
@@ -30,8 +32,9 @@ class SetMeeting extends Component {
     super(props);
     this.state = {
       totalSteps: 3,
-      currentStep: 2,
+      currentStep: 1,
       users: null,
+      wizardComplete: null,
       currentUserdata: null,
       meetupOne: null,
       searchPlace: "",
@@ -60,12 +63,11 @@ class SetMeeting extends Component {
 
   handleFetchCurrentAuthDataFireStore = async () => {
     const userProfileRef = fireStore.collection("usersProfile");
-    const localStorageData = JSON.parse(localStorage["eyeOnEye"]);
     const currentUserdata = (await userProfileRef
-      .doc(localStorageData.uid)
+      .doc(this.props.user.uid)
       .get()).data();
     this.setState({
-      currentUserdata: { ...currentUserdata, uid: localStorageData.uid }
+      currentUserdata: { ...currentUserdata, uid: this.props.user.uid }
     });
   };
 
@@ -131,7 +133,6 @@ class SetMeeting extends Component {
       `${users[index].nickName} Rejected`,
       `You rejected ${users[index].nickName} for meeting`
     );
-    console.log("handleOnUserReject", users[index]);
   };
 
   handleSearchChange = e => {
@@ -260,6 +261,12 @@ class SetMeeting extends Component {
       this.setState({ currentStep: currentStep + 1, nextStep: false });
   };
 
+  handleBackWizard = () => {
+    const { currentStep, totalSteps } = this.state;
+    if (currentStep > 1)
+      this.setState({ currentStep: currentStep - 1, nextStep: false });
+  };
+
   //Method to save the current step and enable the next button
   handleSaveStep = e => {
     const { currentStep } = this.state;
@@ -312,7 +319,7 @@ class SetMeeting extends Component {
           "The date or time you select is not valid as it is lessor than current"
         );
       else {
-        this.handleSaveAllSteps();
+        this.setState({ wizardComplete: true });
       }
     } else {
       ActionCreater(
@@ -326,19 +333,21 @@ class SetMeeting extends Component {
   handleSaveAllSteps = () => {
     const meetingsMetaRef = fireStore.collection("meetingsMeta");
     const meetingsRef = fireStore.collection("meetings");
-    const { meetupOne, meetingLocation, selectedDate } = this.state;
-    const requester = localStorage["eyeOnEye"]
-      ? JSON.parse(localStorage["eyeOnEye"])
-      : null;
+    const {
+      meetupOne,
+      meetingLocation,
+      selectedDate,
+      currentUserdata
+    } = this.state;
     const meetingData = {
-      requester,
+      requester: currentUserdata,
       confirmer: meetupOne,
       location: meetingLocation,
       date: new Date(selectedDate).getTime(),
       status: "not set"
     };
     const meetingsMetaData = {
-      meeter: [requester, meetupOne],
+      meeters: [currentUserdata, meetupOne],
       status: "not set"
     };
     console.log("meetingData", "meetingsMetaData");
@@ -421,14 +430,24 @@ class SetMeeting extends Component {
   };
 
   render() {
-    const { currentStep, totalSteps, nextStep } = this.state;
+    const { currentStep, totalSteps, nextStep,wizardComplete } = this.state;
     return (
       <div className="wizard-setmeeting">
         {this.renderWizard()}
         {this.renderSteps(currentStep)}
         <Button
           type="primary"
-          style={{ position: "absolute", right: "150px" }}
+          style={{ position: "absolute", right: "278px" }}
+          onClick={this.handleBackWizard}
+          disabled={!(currentStep > 1)}
+          id="btnBack"
+        >
+          Back
+          <Icon type="left" theme="outlined" />
+        </Button>
+        <Button
+          type="primary"
+          style={{ position: "absolute", right: "192px" }}
           onClick={this.handleSaveStep}
           disabled={nextStep}
           id="btnSave"
@@ -439,12 +458,21 @@ class SetMeeting extends Component {
 
         <Button
           type="primary"
-          style={{ position: "absolute", right: "45px" }}
+          style={{ position: "absolute", right: "105px" }}
           onClick={this.handleNextStep}
           disabled={!nextStep}
         >
           Next
           <Icon type="right" />
+        </Button>
+
+        <Button
+          type="primary"
+          style={{ position: "absolute", right: "25px" }}
+          onClick={this.handleSaveAllSteps}
+          disabled={!wizardComplete}
+        >
+          Submit
         </Button>
       </div>
     );
@@ -698,4 +726,21 @@ const MapComponent = withScriptjs(
   ))
 );
 
-export default SetMeeting;
+//THis Function will get the updated store
+const mapStateToProps = state => {
+  return {
+    user: state.authReducers.user
+  };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    updateUser: user => dispatch(authActions.updateUser(user)),
+    removeUser: () => dispatch(authActions.removeUser())
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(SetMeeting);

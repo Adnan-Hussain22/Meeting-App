@@ -1,38 +1,60 @@
 import React, { Component } from "react";
-import { Button } from "antd";
+import { connect } from "react-redux";
 import "antd/dist/antd.css";
 import "./dashboard.css";
 import WizardProfile from "../../Components/WizardProfile/wizard";
+import Meetings from "../../Components/Meetings/meetings";
 import defaultAvatar from "../../Helpers/Images/default Avatar.jpg";
-import firebase, { fireStore } from "../../Config/firebase";
-import { Layout, Menu, Icon } from "antd";
-import Card from "../../Components/Card/card";
+import {
+  authActions,
+  loaderActions,
+  meetingActions
+} from "../../Redux/Actions";
+import { Layout, Menu, Icon, Tooltip, List, Avatar, Badge } from "antd";
 import WizardSetMeeting from "../../Components/WizardSetMeeting/wizard";
-const { SubMenu } = Menu;
 const { Header, Content, Footer, Sider } = Layout;
 class Dasboard extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
-      currentAuth: { ...props.currentAuth },
-      menuSelected: "2",
+      currentAuth: { ...props.user },
+      menuSelected: "3",
       headerMenu: false,
       profileSet: true,
-      avatar: ""
+      setMeeting: true,
+      avatar: "",
+      isNotifationListOpen: null,
+      notifications: true
     };
   }
 
+  static getDerivedStateFromPops(props, state) {
+    console.log(props);
+    return { currentAuth: props.user };
+  }
+
   componentDidMount() {
-    // const { currentAuth } = this.state;
-    // if (currentAuth) {
-    //   const userRef = fireStore.collection("usersProfile").doc(currentAuth.uid);
-    //   userRef.get().then(doc => {
-    //     if (doc.exists) {
-    //       const data = doc.data();
-    //       this.setState({ profileSet: true, avatar: data.images[0] });
-    //     }
-    //   });
-    // }
+    this.props.updateLoader({ loader: null });
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.meetingList && nextProps.meetingList.length) {
+      const notifications = nextProps.meetingList.map(value => {
+        return {
+          title: value.requester.nickName,
+          description: `${
+            value.requester.nickName
+          } requested for the meeting at ${value.location.name} on ${new Date(
+            value.date
+          ).toLocaleDateString()}`,
+          avatar: value.requester.images[0]
+        };
+      });
+      this.setState({ notifications });
+    } else {
+      this.setState({ notifications: [] });
+    }
   }
 
   handleSetProfile = () => {
@@ -54,12 +76,18 @@ class Dasboard extends Component {
 
   //Method to render the dashboard
   renderDashboard = () => {
-    const { currentAuth, profileSet, menuSelected, avatar } = this.state;
+    const {
+      currentAuth,
+      profileSet,
+      menuSelected,
+      avatar,
+      setMeeting
+    } = this.state;
     const avatarImg = avatar
       ? avatar
       : currentAuth.avatar
-        ? currentAuth.avatar
-        : defaultAvatar;
+      ? currentAuth.avatar
+      : defaultAvatar;
     return (
       <Layout>
         <Sider
@@ -87,11 +115,15 @@ class Dasboard extends Component {
           >
             <Menu.Item key="1" onClick={this.handleMenuClick}>
               <Icon type="user" />
-              <span className="nav-text">Profile Info</span>
+              <span className="nav-text">Profile</span>
             </Menu.Item>
             <Menu.Item key="2">
               <Icon type="team" theme="outlined" />
               <span className="nav-text">Set a Meeting</span>
+            </Menu.Item>
+            <Menu.Item key="3">
+              <Icon type="team" theme="outlined" />
+              <span className="nav-text">Meetings</span>
             </Menu.Item>
           </Menu>
         </Sider>
@@ -102,7 +134,8 @@ class Dasboard extends Component {
               {!profileSet && (
                 <WizardProfile handleSetProfile={this.handleSetProfile} />
               )}
-              {profileSet && <WizardSetMeeting />}
+              {profileSet && !setMeeting && <WizardSetMeeting />}
+              {setMeeting && <Meetings />}
             </div>
           </Content>
           <Footer style={{ textAlign: "center" }}>
@@ -115,11 +148,50 @@ class Dasboard extends Component {
 
   //Method to render the header
   renderHeader = () => {
-    const { headerMenu } = this.state;
+    const { headerMenu, isNotifationListOpen, notifications } = this.state;
     return (
       <div className="dash-header" style={{ position: "relative" }}>
         <div className="menu-hamburger">
           <div className="menu">
+            {notifications.length > 0 && (
+              <Badge
+                count={notifications.length}
+                className="notification-count"
+              />
+            )}
+            <Tooltip
+              placement="topLeft"
+              title="Notifications"
+              className="notication-btn"
+            >
+              <Icon
+                type="global"
+                onClick={() => {
+                  this.setState({
+                    isNotifationListOpen: !isNotifationListOpen
+                  });
+                }}
+              />
+            </Tooltip>
+            <List
+              itemLayout="horizontal"
+              className={
+                "notification-list " +
+                (isNotifationListOpen ? "notifications-open" : "") +
+                (notifications ? " notifications" : "")
+              }
+              dataSource={notifications}
+              renderItem={item => (
+                <List.Item>
+                  <List.Item.Meta
+                    avatar={<Avatar src={item.avatar} />}
+                    title={<a href="#">{item.title}</a>}
+                    description={item.description}
+                    className="notification-item"
+                  />
+                </List.Item>
+              )}
+            />
             <Icon
               className="trigger"
               type={this.state.headerMenu ? "menu-unfold" : "menu-fold"}
@@ -146,4 +218,25 @@ class Dasboard extends Component {
   };
 }
 
-export default Dasboard;
+//THis Function will get the updated store
+const mapStateToProps = state => {
+  return {
+    user: state.authReducers.user,
+    loader: state.loaderReducers.loader,
+    meetingList: state.meetingsReducers.list
+  };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    updateUser: user => dispatch(authActions.updateUser(user)),
+    removeUser: () => dispatch(authActions.removeUser()),
+    updateLoader: data => dispatch(loaderActions.updateLoader(data)),
+    updateMeetingList: data => dispatch(meetingActions.updateMeetingList(data))
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Dasboard);

@@ -4,6 +4,8 @@ import "antd/dist/antd.css";
 import eyeLogo from "../../Helpers/Images/Eye Logo.jpg";
 import "./login.css";
 import firebase from "../../Config/firebase";
+import { connect } from "react-redux";
+import {authActions,loaderActions} from '../../Redux/Actions';
 const provider = new firebase.auth.FacebookAuthProvider();
 class Login extends Component {
   constructor(props) {
@@ -13,20 +15,21 @@ class Login extends Component {
     };
   }
 
+  static getDerivedStateFromPops(props, state) {
+    return {currentAuth:props.user}
+  }
+
   handleLoginWithFb = () => {
     firebase
       .auth()
       .signInWithPopup(provider)
       .then(result => {
-        console.log(result.user);
         const currentAuth = {
           userName: result.user.displayName,
-            avatar: result.user.photoURL,
-            uid: result.user.uid
-
-        }
-        localStorage["eyeOnEye"] = JSON.stringify(currentAuth)
-        this.props.handleLogin(result.user);
+          avatar: result.user.photoURL,
+          uid: result.user.uid
+        };
+        this.props.updateUser({...currentAuth})
       })
       .catch(function(error) {
         // Handle Errors here.
@@ -65,4 +68,20 @@ class Login extends Component {
   }
 }
 
-export default Login;
+//THis Function will get the updated store
+const mapStateToProps = state => {
+  return {
+    user: state.authReducers.user
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return{
+    updateUser: user=> dispatch(authActions.updateUser(user))
+  }
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Login);

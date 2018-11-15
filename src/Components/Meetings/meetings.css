@@ -1,0 +1,49 @@
+.meetings .meeting-card {
+  width: 300px;
+  margin-top: 16px;
+  box-shadow: 0px 0px 4px 2px #efefef;
+}
+
+.meetings .meeting-card .cancelRequeust-icon:hover,
+.meetings .meeting-card .direction-icon:hover {
+  color: red;
+}
+
+.meetings .meeting-card .acceptRequeust-icon:hover {
+  color: #5dda5d;
+}
+
+.meetings .meeting-card .direction-icon {
+  font-size: 125%;
+  color: #adabab;
+}
+
+.meetings .meeting-card .ant-card-cover {
+  height: 180px;
+}
+
+.ant-card-cover img {
+  height: 100%;
+}
+
+.react-add-to-calendar__button {
+  background-color: white;
+  margin-left: 5px;
+  padding: 6px;
+  border-color: #d9d9d9;
+}
+
+.react-add-to-calendar__dropdown {
+  padding: 5px;
+  border-color: #d9d9d9;
+  top: -40px;
+  left: 20px;
+}
+
+.react-add-to-calendar__button:hover {
+  border-color: #5cacf6;
+}
+
+.react-add-to-calendar__dropdown ul {
+  padding: 10px;
+}

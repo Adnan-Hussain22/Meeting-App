@@ -50,6 +50,60 @@
   border-right: 3px solid #1890ff;
 }
 
+.dashboard-screen .dashboard-header .dash-header .menu .notication-btn {
+  position: absolute;
+  bottom: 15px;
+  right: 70px;
+  font-size: 115%;
+}
+
+.dashboard-screen .dashboard-header .dash-header .menu .notification-list {
+  margin-top: 55px;
+  display: none;
+  list-style: none;
+  padding: 10px;
+  margin-bottom: 0;
+  box-shadow: none;
+  position: absolute;
+  top: 10px;
+  left: -240px;
+  overflow-y: scroll;
+  max-height: 400px;
+  max-width: 270px;
+  background-color: white;
+}
+
+.dashboard-screen .dashboard-header .dash-header .menu .notification-count {
+  position: absolute;
+  top: 15px;
+  right: 54px;
+  z-index: 1;
+}
+
+.dashboard-screen
+  .dashboard-header
+  .dash-header
+  .menu
+  .notification-list.notifications-open {
+  display: inline-block;
+}
+.dashboard-screen
+  .dashboard-header
+  .dash-header
+  .menu
+  .notification-list.notifications-open.notifications {
+  box-shadow: 0px 0px 4px 1px #dacfcf;
+}
+
+.dashboard-screen
+  .dashboard-header
+  .dash-header
+  .menu
+  .notification-list
+  .notification-item {
+  padding: 10px;
+}
+
 .dashboard-screen .ant-layout .ant-layout-sider .avatar img {
   height: 100%;
   width: 100%;

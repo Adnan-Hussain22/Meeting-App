@@ -1,4 +1,6 @@
 import React, { Component } from "react";
+import { connect } from "react-redux";
+import { authActions } from "../../Redux/Actions";
 import {
   Card,
   Button,
@@ -237,13 +239,14 @@ class Profile extends Component {
       durations: Durations,
       coords: coords
     };
-    console.log(obj);
-    const eyeOnEye = JSON.parse(localStorage.getItem("eyeOnEye"));
+    console.log(obj,this.props.user)
     fireStore
       .collection("usersProfile")
-      .doc(eyeOnEye.uid)
+      .doc(this.props.user.uid)
       .set(obj)
-      .then(() => {this.props.handleSetProfile()})
+      .then(() => {
+        this.props.handleSetProfile();
+      })
       .catch(err => {
         console.log("Error While Uploading Data => ", err);
       });
@@ -495,4 +498,22 @@ const MyMapComponent = withScriptjs(
   ))
 );
 
-export default Profile;
+//THis Function will get the updated store
+const mapStateToProps = state => {
+  return {
+    user: state.authReducers.user,
+    loader: state.loaderReducers.loader
+  };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    updateUser: user => dispatch(authActions.updateUser(user)),
+    removeUser: () => dispatch(authActions.removeUser())
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Profile);
