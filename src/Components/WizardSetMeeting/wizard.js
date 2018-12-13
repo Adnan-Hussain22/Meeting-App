@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { authActions } from "../../Redux/Actions";
+import { authActions, miscellaneousActions } from "../../Redux/Actions";
 import { Steps, Input, Button, Modal, Icon, Carousel, DatePicker } from "antd";
 import { Card as AntdCard } from "antd";
 import { Card as DeckCard } from "react-swipe-deck";
@@ -51,6 +51,7 @@ class SetMeeting extends Component {
   }
 
   async componentDidMount() {
+    this.props.handleValidateNavigation();
     NotificationCreater(
       "info",
       `Welcome to set a meeting module`,
@@ -62,6 +63,7 @@ class SetMeeting extends Component {
   }
 
   handleFetchCurrentAuthDataFireStore = async () => {
+    this.props.updateLoader(true);
     const userProfileRef = fireStore.collection("usersProfile");
     const currentUserdata = (await userProfileRef
       .doc(this.props.user.uid)
@@ -108,6 +110,8 @@ class SetMeeting extends Component {
       });
     } catch (err) {
       console.log(err);
+    } finally {
+      this.props.updateLoader(null);
     }
     this.setState({ users });
   };
@@ -430,7 +434,7 @@ class SetMeeting extends Component {
   };
 
   render() {
-    const { currentStep, totalSteps, nextStep,wizardComplete } = this.state;
+    const { currentStep, totalSteps, nextStep, wizardComplete } = this.state;
     return (
       <div className="wizard-setmeeting">
         {this.renderWizard()}
@@ -729,14 +733,16 @@ const MapComponent = withScriptjs(
 //THis Function will get the updated store
 const mapStateToProps = state => {
   return {
-    user: state.authReducers.user
+    user: state.authReducers.user,
+    loader: state.miscellaneousReducers.loader,
   };
 };
 
 const mapDispatchToProps = dispatch => {
   return {
     updateUser: user => dispatch(authActions.updateUser(user)),
-    removeUser: () => dispatch(authActions.removeUser())
+    removeUser: () => dispatch(authActions.removeUser()),
+    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data))
   };
 };
 

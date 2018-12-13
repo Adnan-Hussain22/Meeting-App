@@ -1,5 +1,5 @@
 import * as authActions from "../Actions/authActions";
-import * as loaderActions from "../Actions/loaderActions";
+import * as miscellaneousActions from "./miscellaneousActions";
 import * as meetingActions from "../Actions/meetingsActions";
 
-export { authActions, loaderActions, meetingActions };
+export { authActions, miscellaneousActions, meetingActions };

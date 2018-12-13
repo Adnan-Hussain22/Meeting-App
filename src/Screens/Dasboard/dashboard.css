@@ -115,6 +115,7 @@
 }
 
 .dashboard-screen .ant-layout-sider .ant-menu.ant-menu-light {
+  border-right: none !important;
   background-color: #001529;
 }
 
@@ -123,9 +124,7 @@
 }
 
 .dashboard-screen
-  .ant-layout-sider
-  .ant-menu.ant-menu-light
-  .ant-menu-item.ant-menu-item-selected {
+  .ant-layout-sider .ant-menu.ant-menu-light .ant-menu-item.ant-menu-item-selected {
   background-color: white;
   color: #1890ff;
 }

@@ -1,5 +1,4 @@
-import Data from './Data/data';
-import Profile from './Profile/profile';
-import Settings from './Settings/settings';
-import Wizard from './Wizard/wizard';
-export {Data,Profile,Settings,Wizard}
+import WizardProfile from "./WizardProfile/wizard";
+import WizardSetMeetings from "./WizardSetMeeting/wizard";
+import Meetings from "./Meetings/meetings";
+export { WizardProfile, WizardSetMeetings, Meetings };

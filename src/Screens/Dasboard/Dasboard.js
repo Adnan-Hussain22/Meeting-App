@@ -1,17 +1,20 @@
 import React, { Component } from "react";
+import DasboardRoutes from "../../Config/Routes/DashboardRoutes.js";
 import { connect } from "react-redux";
+import { Redirect, Link } from "react-router-dom";
 import "antd/dist/antd.css";
 import "./dashboard.css";
-import WizardProfile from "../../Components/WizardProfile/wizard";
-import Meetings from "../../Components/Meetings/meetings";
 import defaultAvatar from "../../Helpers/Images/default Avatar.jpg";
 import {
   authActions,
-  loaderActions,
+  miscellaneousActions,
   meetingActions
 } from "../../Redux/Actions";
 import { Layout, Menu, Icon, Tooltip, List, Avatar, Badge } from "antd";
+import WizardProfile from "../../Components/WizardProfile/wizard";
+import Meetings from "../../Components/Meetings/meetings";
 import WizardSetMeeting from "../../Components/WizardSetMeeting/wizard";
+import Loader from "../../Components/Loader/loader";
 const { Header, Content, Footer, Sider } = Layout;
 class Dasboard extends Component {
   constructor(props) {
@@ -19,28 +22,53 @@ class Dasboard extends Component {
 
     this.state = {
       currentAuth: { ...props.user },
-      menuSelected: "3",
+      navigation: "1",
       headerMenu: false,
       profileSet: true,
       setMeeting: true,
       avatar: "",
       isNotifationListOpen: null,
-      notifications: true
+      notifications: true,
+      loading: null
     };
   }
 
-  static getDerivedStateFromPops(props, state) {
-    console.log(props);
-    return { currentAuth: props.user };
-  }
-
   componentDidMount() {
-    this.props.updateLoader({ loader: null });
+    // setTimeout(()=>{
+    //   this.props.history.push('/dashboard/Meetings');
+    //   this.handleValidateNavigation();
+    // },10000)
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.meetingList && nextProps.meetingList.length) {
-      const notifications = nextProps.meetingList.map(value => {
+  handleValidateNavigation = () => {
+    const routeEndPoint = this.props.history.location.pathname;
+    switch (routeEndPoint) {
+      case "/dashboard": {
+        this.props.updateNaviagation("1");
+        break;
+      }
+
+      case "/dashboard/": {
+        this.props.updateNaviagation("1");
+        break;
+      }
+
+      case "/dashboard/Set_Meetings": {
+        this.props.updateNaviagation("2");
+        break;
+      }
+
+      case "/dashboard/Meetings": {
+        this.props.updateNaviagation("3");
+        break;
+      }
+    }
+  };
+
+  handleNotification = props => {
+    let notifications = [];
+    if (props.meetingList && props.meetingList.length) {
+      notifications = props.meetingList.map(value => {
         return {
           title: value.requester.nickName,
           description: `${
@@ -51,10 +79,17 @@ class Dasboard extends Component {
           avatar: value.requester.images[0]
         };
       });
-      this.setState({ notifications });
-    } else {
-      this.setState({ notifications: [] });
     }
+    return notifications;
+  };
+
+  componentWillReceiveProps(nextProps) {
+    this.setState({
+      notifications: this.handleNotification(nextProps),
+      loading: nextProps.loader,
+      currentAuth: nextProps.user,
+      navigation: nextProps.navigation
+    });
   }
 
   handleSetProfile = () => {
@@ -70,8 +105,25 @@ class Dasboard extends Component {
     this.setState({ menuSelected: "2" });
   };
 
+  handleLogout = () => {
+    this.props.updateUser(null);
+    this.props.history.replace({ pathname: "/" });
+  };
+
+  handleMenuClick = route => {
+    this.props.history.push(route);
+    this.handleValidateNavigation();
+  };
+
   render() {
-    return <div className="dashboard-screen">{this.renderDashboard()}</div>;
+    return this.props.user ? (
+      <div className="dashboard-screen">
+        <Loader enabled={this.state.loading} />
+        {this.renderDashboard()}
+      </div>
+    ) : (
+      <Redirect exact to="/" />
+    );
   }
 
   //Method to render the dashboard
@@ -79,7 +131,7 @@ class Dasboard extends Component {
     const {
       currentAuth,
       profileSet,
-      menuSelected,
+      navigation,
       avatar,
       setMeeting
     } = this.state;
@@ -108,20 +160,31 @@ class Dasboard extends Component {
               {currentAuth.userName ? currentAuth.userName : "User Name"}
             </h4>
           </div>
-          <Menu
-            theme="light"
-            mode="inline"
-            defaultSelectedKeys={[menuSelected]}
-          >
-            <Menu.Item key="1" onClick={this.handleMenuClick}>
+          <Menu theme="light" mode="inline" selectedKeys={[navigation]}>
+            <Menu.Item
+              key="1"
+              onClick={() => {
+                this.props.history.push('/dashboard/')
+              }}
+            >
               <Icon type="user" />
               <span className="nav-text">Profile</span>
             </Menu.Item>
-            <Menu.Item key="2">
+            <Menu.Item
+              key="2"
+              onClick={() => {
+                this.props.history.push('/dashboard/Set_Meetings')
+              }}
+            >
               <Icon type="team" theme="outlined" />
               <span className="nav-text">Set a Meeting</span>
             </Menu.Item>
-            <Menu.Item key="3">
+            <Menu.Item
+              key="3"
+              onClick={() => {
+                this.props.history.push('/dashboard/Meetings')
+              }}
+            >
               <Icon type="team" theme="outlined" />
               <span className="nav-text">Meetings</span>
             </Menu.Item>
@@ -131,11 +194,25 @@ class Dasboard extends Component {
           <Header className="dashboard-header">{this.renderHeader()}</Header>
           <Content style={{ margin: "24px 16px 0" }}>
             <div style={{ padding: 24, background: "#fff", minHeight: 360 }}>
-              {!profileSet && (
-                <WizardProfile handleSetProfile={this.handleSetProfile} />
+              {/* {!profileSet && (
+                <WizardProfile
+                  handleSetProfile={this.handleSetProfile}
+                  handleValidateNavigation={this.handleValidateNavigation}
+                />
               )}
-              {profileSet && !setMeeting && <WizardSetMeeting />}
-              {setMeeting && <Meetings />}
+              {profileSet && !setMeeting && (
+                <WizardSetMeeting
+                  handleValidateNavigation={this.handleValidateNavigation}
+                />
+              )}
+              {setMeeting && (
+                <Meetings
+                  handleValidateNavigation={this.handleValidateNavigation}
+                />
+              )} */}
+              <DasboardRoutes
+                handleValidateNavigation={this.handleValidateNavigation}
+              />
             </div>
           </Content>
           <Footer style={{ textAlign: "center" }}>
@@ -203,7 +280,7 @@ class Dasboard extends Component {
             theme={"light"}
             className="header-menu"
           >
-            <Menu.Item key="1" onClick={this.props.handleLogout}>
+            <Menu.Item key="1" onClick={this.handleLogout}>
               <Icon type="poweroff" theme="outlined" />
               Logout
             </Menu.Item>
@@ -220,10 +297,12 @@ class Dasboard extends Component {
 
 //THis Function will get the updated store
 const mapStateToProps = state => {
+  console.log(state);
   return {
     user: state.authReducers.user,
-    loader: state.loaderReducers.loader,
-    meetingList: state.meetingsReducers.list
+    loader: state.miscellaneousReducers.loader,
+    meetingList: state.meetingsReducers.list,
+    navigation: state.miscellaneousReducers.navigation
   };
 };
 
@@ -231,8 +310,8 @@ const mapDispatchToProps = dispatch => {
   return {
     updateUser: user => dispatch(authActions.updateUser(user)),
     removeUser: () => dispatch(authActions.removeUser()),
-    updateLoader: data => dispatch(loaderActions.updateLoader(data)),
-    updateMeetingList: data => dispatch(meetingActions.updateMeetingList(data))
+    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data)),
+    updateMeetingList: data => dispatch(meetingActions.updateMeetingList(data)),
   };
 };
 

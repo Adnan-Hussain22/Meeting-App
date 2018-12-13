@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { Card, Button } from "antd";
+import {Redirect} from 'react-router-dom'
 import "antd/dist/antd.css";
 import eyeLogo from "../../Helpers/Images/Eye Logo.jpg";
 import "./login.css";
@@ -30,6 +31,9 @@ class Login extends Component {
           uid: result.user.uid
         };
         this.props.updateUser({...currentAuth})
+        setTimeout(()=>{
+          this.props.history.replace({pathname:'/dashboard'})
+        },5000)
       })
       .catch(function(error) {
         // Handle Errors here.
@@ -45,6 +49,15 @@ class Login extends Component {
 
   render() {
     return (
+      (!this.props.user ? this.renderLoginScreen(): 
+      <Redirect
+      to="/dashboard"
+      />)
+    );
+  }
+
+  renderLoginScreen = ()=>{
+    return(
       <div className="login-screen">
         <div className="login-inner">
           <div className="eye-logo">
@@ -64,7 +77,7 @@ class Login extends Component {
           </div>
         </div>
       </div>
-    );
+    )
   }
 }
 

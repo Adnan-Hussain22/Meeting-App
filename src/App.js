@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Login from "./Screens/Login/login";
 import { Provider,connect } from "react-redux";
 import {updateUser,removeUser} from './Redux/Actions/authActions';
+import IndexRoutes from './Config/Routes'
 import store from "./Redux/store";
 import Dasboard from "./Screens/Dasboard/Dasboard";
 class App extends Component {
@@ -40,8 +41,9 @@ class App extends Component {
     const { currentAuth } = this.state;
     return (
         <div className="App">
-          {!currentAuth && <Login />}
-          {currentAuth && <Dasboard />}
+          {/* {!currentAuth && <Login />}
+          {currentAuth && <Dasboard />} */}
+          <IndexRoutes/>
         </div>
     );
   }

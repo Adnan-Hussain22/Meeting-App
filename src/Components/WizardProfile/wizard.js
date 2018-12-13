@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { authActions } from "../../Redux/Actions";
+import { authActions,miscellaneousActions } from "../../Redux/Actions";
 import {
   Card,
   Button,
@@ -22,6 +22,11 @@ import {
 import "antd/dist/antd.css";
 import "./wizard.css";
 import firebase, { fireStore } from "../../Config/firebase";
+import { strict } from "assert";
+import {
+  ActionCreater,
+  NotificationCreater
+} from "../../Helpers/Actions/action";
 const FormItem = Form.Item;
 const Step = Steps.Step;
 const CheckboxGroup = Checkbox.Group;
@@ -41,8 +46,13 @@ class Profile extends Component {
       Durations: [],
       nextStep: false,
       fileList: [],
-      coords: null
+      coords: null,
+      wizardComplete: false
     };
+  }
+
+  componentDidMount(){
+    this.props.handleValidateNavigation();
   }
 
   //Method to preview the image on the model
@@ -108,6 +118,11 @@ class Profile extends Component {
   handleNextStep = () => {
     const { step, totalSteps } = this.state;
     if (step < totalSteps) this.setState({ step: step + 1, nextStep: false });
+  };
+
+  handleBackWizard = () => {
+    const { step } = this.state;
+    if (step > 1) this.setState({ step: step - 1 });
   };
 
   handlePreview = file => {
@@ -206,7 +221,7 @@ class Profile extends Component {
   };
 
   handleSaveStep4 = e => {
-    if (this.state.coords) this.handleSaveAllData();
+    if (this.state.coords) this.setState({ wizardComplete: true });
   };
 
   handelUploadedBundle = info => {
@@ -217,7 +232,7 @@ class Profile extends Component {
     }
   };
 
-  handleSaveAllData = async () => {
+  handleSaveAllSteps = async () => {
     const {
       nickName,
       contact,
@@ -226,30 +241,41 @@ class Profile extends Component {
       Durations,
       coords
     } = this.state;
+    this.props.updateLoader(true);
     let images = [];
-    for (let i = 0; i < fileList.length; i++) {
-      const url = await this.SaveImagesToStorage(fileList[i].imageBlob);
-      images.push(url);
+    try {
+      for (let i = 0; i < fileList.length; i++) {
+        const url = await this.SaveImagesToStorage(fileList[i].imageBlob);
+        images.push(url);
+      }
+      const obj = {
+        nickName,
+        contact,
+        images: images,
+        interest: Beverages,
+        durations: Durations,
+        coords: coords
+      };
+      await fireStore
+        .collection("usersProfile")
+        .doc(this.props.user.uid)
+        .set(obj);
+      ActionCreater(
+        "success",
+        "Data uploaded successfully",
+        "Profile data uploaded successfully"
+      );
+      this.props.handleSetProfile();
+    } catch (err) {
+      ActionCreater(
+        "error",
+        "Error!!",
+        `${err}`
+      );
+      console.log("Error While Uploading Data => ", err);
+    } finally {
+      this.props.updateLoader(null);
     }
-    const obj = {
-      nickName,
-      contact,
-      images: images,
-      interest: Beverages,
-      durations: Durations,
-      coords: coords
-    };
-    console.log(obj,this.props.user)
-    fireStore
-      .collection("usersProfile")
-      .doc(this.props.user.uid)
-      .set(obj)
-      .then(() => {
-        this.props.handleSetProfile();
-      })
-      .catch(err => {
-        console.log("Error While Uploading Data => ", err);
-      });
   };
 
   async SaveImagesToStorage(imageBlob) {
@@ -264,28 +290,49 @@ class Profile extends Component {
   }
 
   render() {
-    const { step, nextStep } = this.state;
+    const { step, nextStep, wizardComplete } = this.state;
     return (
       <div className="wizard" style={{ position: "relative" }}>
         {this.renderWizard()}
         {this.renderSteps(step)}
         <Button
           type="primary"
-          style={{ position: "absolute", right: "5px" }}
+          style={{ position: "absolute", right: "278px" }}
+          onClick={this.handleBackWizard}
+          disabled={!(step > 1)}
+          id="btnBack"
+        >
+          Back
+          <Icon type="left" theme="outlined" />
+        </Button>
+        <Button
+          type="primary"
+          style={{ position: "absolute", right: "192px" }}
+          onClick={this.handleSaveStep}
+          disabled={nextStep}
+          id="btnSave"
+        >
+          Save
+          <Icon type="lock" theme="outlined" />
+        </Button>
+
+        <Button
+          type="primary"
+          style={{ position: "absolute", right: "105px" }}
           onClick={this.handleNextStep}
           disabled={!nextStep}
         >
           Next
           <Icon type="right" />
         </Button>
+
         <Button
           type="primary"
-          style={{ position: "absolute", right: "100px" }}
-          onClick={this.handleSaveStep}
-          disabled={nextStep}
+          style={{ position: "absolute", right: "25px" }}
+          onClick={this.handleSaveAllSteps}
+          disabled={!wizardComplete}
         >
-          Save
-          <Icon type="lock" theme="outlined" />
+          Submit
         </Button>
       </div>
     );
@@ -502,14 +549,15 @@ const MyMapComponent = withScriptjs(
 const mapStateToProps = state => {
   return {
     user: state.authReducers.user,
-    loader: state.loaderReducers.loader
+    loader: state.miscellaneousReducers.loader,
   };
 };
 
 const mapDispatchToProps = dispatch => {
   return {
     updateUser: user => dispatch(authActions.updateUser(user)),
-    removeUser: () => dispatch(authActions.removeUser())
+    removeUser: () => dispatch(authActions.removeUser()),
+    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data))
   };
 };
 

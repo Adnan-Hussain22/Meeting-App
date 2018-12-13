@@ -3,7 +3,12 @@ import ReactDOM from "react-dom";
 import { connect } from "react-redux";
 import AddToCalendar from "react-add-to-calendar";
 import "react-add-to-calendar/dist/react-add-to-calendar.css";
-import { authActions, meetingActions } from "../../Redux/Actions";
+import {
+  authActions,
+  meetingActions,
+  miscellaneousActions
+} from "../../Redux/Actions";
+import { ActionCreater } from "../../Helpers/Actions/action";
 import defaultAvatar from "../../Helpers/Images/default Avatar.jpg";
 import {
   Card,
@@ -45,40 +50,62 @@ class Meetings extends Component {
     this.setState({ meetingList: nextProps.meetingList });
   }
 
-  async componentDidMount() {
+  handleFetchMeetings = async () => {
     const meetingsRef = fireStore.collection("meetings");
     const meetingsMetaRef = fireStore.collection("meetingsMeta");
     const meetingList = [];
-    const meetingSnap = await meetingsMetaRef.get();
-    meetingSnap.forEach(doc => {
-      const data = doc.data();
-      console.log(data);
-      const filteredData = data.meeters.filter(
-        value => value.uid == this.props.user.uid && data.status == "not set"
-      );
-      if (filteredData.length) {
-        meetingsRef
-          .doc(doc.id)
-          .get()
-          .then(childSnap => {
-            const childData = childSnap.data();
-            if (childData.requester.uid != this.props.user.uid) {
-              meetingList.push({ ...childData, Id: doc.id });
-              this.props.updateMeetingList(meetingList);
-            }
-          });
-      } else {
-        Modal.info({
-          title: "No Pending Requests",
-          content: (
-            <div>
-              <p>There are no pending requests</p>
-            </div>
-          )
+    this.props.updateLoader(true);
+    try {
+      const meetingSnap = await meetingsMetaRef.get();
+      if (!meetingSnap.empty) {
+        meetingSnap.forEach(doc => {
+          const data = doc.data();
+          console.log(data);
+          const filteredData = data.meeters.filter(
+            value =>
+              value.uid == this.props.user.uid && data.status == "not set"
+          );
+          console.log(filteredData)
+          if (filteredData.length) {
+            meetingsRef
+              .doc(doc.id)
+              .get()
+              .then(childSnap => {
+                const childData = childSnap.data();
+                if (childData.requester.uid != this.props.user.uid) {
+                  meetingList.push({ ...childData, Id: doc.id });
+                  this.props.updateMeetingList(meetingList);
+                }
+              });
+          } else {
+            ActionCreater(
+              "info",
+              "No Pending Requests",
+              <div>
+                <p>There are no pending requests</p>
+              </div>
+            );
+            this.props.updateMeetingList(null);
+          }
         });
-        this.props.updateMeetingList(null)
+      } else {
+        ActionCreater(
+          "info",
+          "No Pending Requests",
+          <div>
+            <p>There are no pending requests</p>
+          </div>
+        );
       }
-    });
+    } catch (err) {
+      console.log(err);
+    } finally {
+      this.props.updateLoader(null);
+    }
+  };
+
+  componentDidMount() {
+    this.handleFetchMeetings();
   }
 
   handleCloseModel = () => {
@@ -376,15 +403,16 @@ const MapComponent = withScriptjs(
 const mapStateToProps = state => {
   return {
     meetingList: state.meetingsReducers.list,
-    user: state.authReducers.user
+    user: state.authReducers.user,
+    loader: state.miscellaneousReducers.loader
   };
 };
-
 const mapDispatchToProps = dispatch => {
   return {
     updateUser: user => dispatch(authActions.updateUser(user)),
     removeUser: () => dispatch(authActions.removeUser()),
-    updateMeetingList: data => dispatch(meetingActions.updateMeetingList(data))
+    updateMeetingList: data => dispatch(meetingActions.updateMeetingList(data)),
+    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data))
   };
 };
 
