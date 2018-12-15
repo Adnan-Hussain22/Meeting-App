@@ -1,13 +1,9 @@
 import React, { Component } from "react";
 import {
-  withRouter,
   BrowserRouter as Router,
-  Switch,
   Route,
-  Redirect
 } from "react-router-dom";
 import * as Screens from "../../Screens";
-import * as DasboardComponents from "../../Components";
 
 const Routes = props => (
   <Router>

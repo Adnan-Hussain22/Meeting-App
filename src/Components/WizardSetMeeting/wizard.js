@@ -51,7 +51,6 @@ class SetMeeting extends Component {
   }
 
   async componentDidMount() {
-    this.props.handleValidateNavigation();
     NotificationCreater(
       "info",
       `Welcome to set a meeting module`,
@@ -437,11 +436,22 @@ class SetMeeting extends Component {
     const { currentStep, totalSteps, nextStep, wizardComplete } = this.state;
     return (
       <div className="wizard-setmeeting">
+        <h3 style={{ textAlign: "center", marginBottom: "30px" }}>
+          Set a meeting
+        </h3>
         {this.renderWizard()}
         {this.renderSteps(currentStep)}
+        {this.renderWizardActions()}
+      </div>
+    );
+  }
+
+  renderWizardActions = () => {
+    const { currentStep,nextStep, wizardComplete } = this.state;
+    return (
+      <div className="wizard-actions">
         <Button
           type="primary"
-          style={{ position: "absolute", right: "278px" }}
           onClick={this.handleBackWizard}
           disabled={!(currentStep > 1)}
           id="btnBack"
@@ -451,7 +461,6 @@ class SetMeeting extends Component {
         </Button>
         <Button
           type="primary"
-          style={{ position: "absolute", right: "192px" }}
           onClick={this.handleSaveStep}
           disabled={nextStep}
           id="btnSave"
@@ -462,7 +471,6 @@ class SetMeeting extends Component {
 
         <Button
           type="primary"
-          style={{ position: "absolute", right: "105px" }}
           onClick={this.handleNextStep}
           disabled={!nextStep}
         >
@@ -472,7 +480,6 @@ class SetMeeting extends Component {
 
         <Button
           type="primary"
-          style={{ position: "absolute", right: "25px" }}
           onClick={this.handleSaveAllSteps}
           disabled={!wizardComplete}
         >
@@ -480,7 +487,7 @@ class SetMeeting extends Component {
         </Button>
       </div>
     );
-  }
+  };
 
   renderSteps = step => {
     return this.getCurrentStep(step);
@@ -734,7 +741,7 @@ const MapComponent = withScriptjs(
 const mapStateToProps = state => {
   return {
     user: state.authReducers.user,
-    loader: state.miscellaneousReducers.loader,
+    loader: state.miscellaneousReducers.loader
   };
 };
 

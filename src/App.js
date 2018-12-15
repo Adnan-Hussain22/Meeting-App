@@ -1,10 +1,7 @@
 import React, { Component } from "react";
-import Login from "./Screens/Login/login";
-import { Provider,connect } from "react-redux";
+import { connect } from "react-redux";
 import {updateUser,removeUser} from './Redux/Actions/authActions';
 import IndexRoutes from './Config/Routes'
-import store from "./Redux/store";
-import Dasboard from "./Screens/Dasboard/Dasboard";
 class App extends Component {
   constructor(props) {
     super();

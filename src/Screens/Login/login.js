@@ -1,23 +1,23 @@
 import React, { Component } from "react";
 import { Card, Button } from "antd";
-import {Redirect} from 'react-router-dom'
+import { Redirect } from "react-router-dom";
 import "antd/dist/antd.css";
 import eyeLogo from "../../Helpers/Images/Eye Logo.jpg";
 import "./login.css";
 import firebase from "../../Config/firebase";
 import { connect } from "react-redux";
-import {authActions,loaderActions} from '../../Redux/Actions';
+import { authActions, loaderActions } from "../../Redux/Actions";
 const provider = new firebase.auth.FacebookAuthProvider();
 class Login extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      currentUser: ""
+      currentUser: null
     };
   }
 
   static getDerivedStateFromPops(props, state) {
-    return {currentAuth:props.user}
+    return { currentAuth: props.user };
   }
 
   handleLoginWithFb = () => {
@@ -30,10 +30,10 @@ class Login extends Component {
           avatar: result.user.photoURL,
           uid: result.user.uid
         };
-        this.props.updateUser({...currentAuth})
-        setTimeout(()=>{
-          this.props.history.replace({pathname:'/dashboard'})
-        },5000)
+        this.props.updateUser({ ...currentAuth });
+        setTimeout(() => {
+          this.props.history.replace({ pathname: "/dashboard" });
+        }, 5000);
       })
       .catch(function(error) {
         // Handle Errors here.
@@ -48,16 +48,15 @@ class Login extends Component {
   };
 
   render() {
-    return (
-      (!this.props.user ? this.renderLoginScreen(): 
-      <Redirect
-      to="/dashboard"
-      />)
+    return !this.props.user ? (
+      this.renderLoginScreen()
+    ) : (
+      <Redirect to="/dashboard" />
     );
   }
 
-  renderLoginScreen = ()=>{
-    return(
+  renderLoginScreen = () => {
+    return (
       <div className="login-screen">
         <div className="login-inner">
           <div className="eye-logo">
@@ -77,8 +76,8 @@ class Login extends Component {
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 }
 
 //THis Function will get the updated store
@@ -88,10 +87,10 @@ const mapStateToProps = state => {
   };
 };
 
-const mapDispatchToProps = (dispatch) => {
-  return{
-    updateUser: user=> dispatch(authActions.updateUser(user))
-  }
+const mapDispatchToProps = dispatch => {
+  return {
+    updateUser: user => dispatch(authActions.updateUser(user))
+  };
 };
 
 export default connect(

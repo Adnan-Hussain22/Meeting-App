@@ -37,7 +37,7 @@ class Meetings extends Component {
     super(props);
     this.state = {
       loading: false,
-      meetingList: null,
+      meetingList: props.meetingList,
       isOpenMapModal: false,
       isOpenCalenderModal: false,
       directions: false,
@@ -54,7 +54,6 @@ class Meetings extends Component {
     const meetingsRef = fireStore.collection("meetings");
     const meetingsMetaRef = fireStore.collection("meetingsMeta");
     const meetingList = [];
-    this.props.updateLoader(true);
     try {
       const meetingSnap = await meetingsMetaRef.get();
       if (!meetingSnap.empty) {
@@ -65,7 +64,6 @@ class Meetings extends Component {
             value =>
               value.uid == this.props.user.uid && data.status == "not set"
           );
-          console.log(filteredData)
           if (filteredData.length) {
             meetingsRef
               .doc(doc.id)
@@ -74,37 +72,32 @@ class Meetings extends Component {
                 const childData = childSnap.data();
                 if (childData.requester.uid != this.props.user.uid) {
                   meetingList.push({ ...childData, Id: doc.id });
-                  this.props.updateMeetingList(meetingList);
                 }
               });
-          } else {
-            ActionCreater(
+          } 
+        });
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
+      if(meetingList.length){
+        this.props.updateMeetingList(meetingList);
+      }
+      else{
+        this.props.updateLoader(null);  
+        ActionCreater(
               "info",
               "No Pending Requests",
               <div>
                 <p>There are no pending requests</p>
               </div>
             );
-            this.props.updateMeetingList(null);
-          }
-        });
-      } else {
-        ActionCreater(
-          "info",
-          "No Pending Requests",
-          <div>
-            <p>There are no pending requests</p>
-          </div>
-        );
       }
-    } catch (err) {
-      console.log(err);
-    } finally {
-      this.props.updateLoader(null);
     }
   };
 
   componentDidMount() {
+    this.props.updateLoader(true);
     this.handleFetchMeetings();
   }
 

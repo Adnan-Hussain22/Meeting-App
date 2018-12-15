@@ -8,6 +8,10 @@ const reducer = (state = {}, action) => {
       return { ...state, user: null };
     }
 
+    case "UPDATE_PROFILE": {
+      return { ...state, profile: action.data };
+    }
+
     default: {
       return state;
     }

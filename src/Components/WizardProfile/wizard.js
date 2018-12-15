@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { authActions,miscellaneousActions } from "../../Redux/Actions";
+import { authActions, miscellaneousActions } from "../../Redux/Actions";
 import {
   Card,
   Button,
@@ -51,9 +51,7 @@ class Profile extends Component {
     };
   }
 
-  componentDidMount(){
-    this.props.handleValidateNavigation();
-  }
+  componentDidMount() {}
 
   //Method to preview the image on the model
   handlePreview = file => {
@@ -265,13 +263,11 @@ class Profile extends Component {
         "Data uploaded successfully",
         "Profile data uploaded successfully"
       );
-      this.props.handleSetProfile();
+      this.props.handleupdateNavigation("3");
+      this.props.history.push("/dashboard/Set_Meetings");
+      this.props.handleValidateProfile();
     } catch (err) {
-      ActionCreater(
-        "error",
-        "Error!!",
-        `${err}`
-      );
+      ActionCreater("error", "Error!!", `${err}`);
       console.log("Error While Uploading Data => ", err);
     } finally {
       this.props.updateLoader(null);
@@ -292,12 +288,23 @@ class Profile extends Component {
   render() {
     const { step, nextStep, wizardComplete } = this.state;
     return (
-      <div className="wizard" style={{ position: "relative" }}>
+      <div className="wizard-setProfile" style={{ position: "relative" }}>
+        <h3 style={{ textAlign: "center", marginBottom: "30px" }}>
+          Set your profile
+        </h3>
         {this.renderWizard()}
         {this.renderSteps(step)}
+        {this.renderWizardActions()}
+      </div>
+    );
+  }
+
+  renderWizardActions = () => {
+    const { step, nextStep, wizardComplete } = this.state;
+    return (
+      <div className="wizard-actions">
         <Button
           type="primary"
-          style={{ position: "absolute", right: "278px" }}
           onClick={this.handleBackWizard}
           disabled={!(step > 1)}
           id="btnBack"
@@ -307,7 +314,6 @@ class Profile extends Component {
         </Button>
         <Button
           type="primary"
-          style={{ position: "absolute", right: "192px" }}
           onClick={this.handleSaveStep}
           disabled={nextStep}
           id="btnSave"
@@ -318,7 +324,6 @@ class Profile extends Component {
 
         <Button
           type="primary"
-          style={{ position: "absolute", right: "105px" }}
           onClick={this.handleNextStep}
           disabled={!nextStep}
         >
@@ -328,7 +333,6 @@ class Profile extends Component {
 
         <Button
           type="primary"
-          style={{ position: "absolute", right: "25px" }}
           onClick={this.handleSaveAllSteps}
           disabled={!wizardComplete}
         >
@@ -336,7 +340,7 @@ class Profile extends Component {
         </Button>
       </div>
     );
-  }
+  };
 
   renderSteps = step => {
     return <div>{this.getCurrentStep(step)}</div>;
@@ -549,7 +553,7 @@ const MyMapComponent = withScriptjs(
 const mapStateToProps = state => {
   return {
     user: state.authReducers.user,
-    loader: state.miscellaneousReducers.loader,
+    loader: state.miscellaneousReducers.loader
   };
 };
 

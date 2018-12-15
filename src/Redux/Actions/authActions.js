@@ -11,4 +11,11 @@ const removeUser = () => {
   };
 };
 
-export { updateUser, removeUser };
+const updateProfile = data => {
+  return {
+    type: "UPDATE_PROFILE",
+    data
+  };
+};
+
+export { updateUser, removeUser, updateProfile };

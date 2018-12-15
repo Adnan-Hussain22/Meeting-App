@@ -1,4 +1,7 @@
-.dashboard-screen .ant-layout .ant-layout-sider .avatar {
+.dashboard-screen .dashboard-layout {
+  height: 100vh;
+}
+.dashboard-screen .dashboard-layout .dashboard-slider .avatar {
   height: 100px;
   width: 100px;
   margin: auto;
@@ -37,7 +40,7 @@
   .dashboard-header
   .dash-header
   .menu-hamburger
-  ul
+  .header-menu
   li.ant-menu-item-selected {
   background-color: #e6f7ff;
   color: #1890ff;
@@ -104,27 +107,30 @@
   padding: 10px;
 }
 
-.dashboard-screen .ant-layout .ant-layout-sider .avatar img {
+.dashboard-screen .dashboard-layout .dashboard-slider .avatar img {
   height: 100%;
   width: 100%;
   border-radius: 50%;
 }
 
-.dashboard-screen .ant-layout .ant-layout-content > div {
-  padding-bottom: 50px !important;
-}
-
-.dashboard-screen .ant-layout-sider .ant-menu.ant-menu-light {
+.dashboard-screen .dashboard-layout .dashboard-slider .dasboard-navigation {
   border-right: none !important;
   background-color: #001529;
 }
 
-.dashboard-screen .ant-layout-sider .ant-menu.ant-menu-light .ant-menu-item {
+.dashboard-screen
+  .dashboard-layout
+  .dashboard-slider
+  .dasboard-navigation
+  .navigation-menu {
   color: #9b9bd4;
 }
 
 .dashboard-screen
-  .ant-layout-sider .ant-menu.ant-menu-light .ant-menu-item.ant-menu-item-selected {
+  .dashboard-layout
+  .dashboard-slider
+  .dasboard-navigation
+  .navigation-menu.ant-menu-item-selected {
   background-color: white;
   color: #1890ff;
 }
@@ -143,4 +149,44 @@
   background-color: white;
   color: #1890ff;
   border-right: 3px solid #1890ff;
+}
+
+.dashboard-screen .dashboard-layout .main-layout .main-content {
+  margin: 5px !important;
+  min-height: auto;
+}
+
+.dashboard-screen .dashboard-layout .main-layout .main-content > div {
+  padding: 15px !important;
+}
+
+.dashboard-screen .setProfile-action-container button {
+  height: 90px;
+  width: 90px;
+  margin: auto;
+  margin-top: 50px;
+  display: block;
+}
+
+.dashboard-screen .setProfile-action-container span {
+  font-weight: bolder;
+  font-size: 24px;
+  display: block;
+  margin: auto;
+  max-width: 125px;
+}
+
+.dashboard-screen .wizard-actions{
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 25px;
+}
+
+.dashboard-screen .wizard-actions button {
+  margin: 10px;
+}
+
+.ant-layout-sider-zero-width-trigger{
+  z-index: 1;
 }

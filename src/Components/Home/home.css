@@ -1,0 +1,115 @@
+.user-statistics .event-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.user-statistics .event-meta .md-col-6{ 
+  flex:50%
+}
+
+.user-statistics .event-meta > div {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  justify-content: center;
+}
+
+.event-meta .md-col-6 .user-info .user-meta .ant-list-item-meta-avatar {
+  margin-right: 25px;
+  margin-top: 10px;
+}
+
+.event-meta .md-col-6 .user-info .user-meta .user-avatar {
+  height: 70px;
+  width: 70px;
+  border-radius: 50%;
+  box-shadow: 0px 0px 5px 4px #dad5d5;
+}
+
+.event-meta .md-col-6 .user-info .user-meta .user-name {
+  color: #9c9c9ccc;
+  font-size: 16px;
+}
+
+.event-meta .event-date {
+  min-width: 300px;
+  margin-top: 30px;
+}
+
+.user-statistics .meetings-meta {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  margin-top: 35px;
+  flex-wrap: wrap;
+}
+
+.user-statistics .meetings-meta .meta-card {
+  display: flex;
+  flex: 33.3333333;
+  flex-direction: row;
+  justify-content: space-evenly;
+  border: none;
+  margin-top: 15px;
+}
+
+.user-statistics .meetings-meta .meta-card > .ant-card-body {
+  padding: 10px;
+  box-shadow: 0px 0px 10px 5px #e2dadacc;
+  border-radius: 10px;
+}
+
+.user-statistics .meetings-meta .meta-card .meta-type {
+  text-align: center;
+  font-weight: bolder;
+  font-size: larger;
+}
+
+.user-statistics .meetings-meta .meta-card .total {
+  margin: auto;
+  box-shadow: 0px 0px 9px 3px #cccc;
+  padding: 8px;
+  height: 120px;
+  width: 120px;
+  border-radius: 120px;
+  text-align: center;
+  line-height: 100px;
+  font-size: 50px;
+  font-weight: 700;
+  margin-top: 25px;
+}
+
+.user-statistics .meetings-meta .meta-card .brand {
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  font-size: 22px;
+  font-weight: bolder;
+}
+
+.user-statistics .meetings-meta .meta-card .list {
+  padding: 8px;
+  margin: 10px 0px 10px 0px;
+}
+
+.user-statistics .meetings-meta .meta-card > .ant-card-body {
+  min-width: 300px;
+}
+
+.user-statistics .meetings-meta .meta-card .list .list-grid {
+  border: none;
+}
+
+.user-statistics .meetings-meta .meta-card .list .list-grid .ant-card-head {
+  display: none;
+}
+
+.user-statistics .meetings-meta .meta-card .list .list-grid .grid-item {
+  padding: 8px;
+}
+
+.user-statistics .meetings-meta .meta-card .button {
+  max-width: 85px;
+  margin: auto;
+}
