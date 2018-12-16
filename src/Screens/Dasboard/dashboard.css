@@ -76,6 +76,15 @@
   background-color: white;
 }
 
+.dashboard-screen
+  .dashboard-header
+  .dash-header
+  .menu
+  .notification-list
+  .notification-item:hover {
+  background-color: #f9f6f6cc;
+}
+
 .dashboard-screen .dashboard-header .dash-header .menu .notification-count {
   position: absolute;
   top: 15px;
@@ -176,7 +185,7 @@
   max-width: 125px;
 }
 
-.dashboard-screen .wizard-actions{
+.dashboard-screen .wizard-actions {
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
@@ -187,6 +196,6 @@
   margin: 10px;
 }
 
-.ant-layout-sider-zero-width-trigger{
+.ant-layout-sider-zero-width-trigger {
   z-index: 1;
 }

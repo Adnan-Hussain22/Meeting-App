@@ -50,48 +50,36 @@ class Meetings extends Component {
     this.setState({ meetingList: nextProps.meetingList });
   }
 
-  handleFetchMeetings = async () => {
+  handleFetchMeetings = async (id = null) => {
     const meetingsRef = fireStore.collection("meetings");
-    const meetingsMetaRef = fireStore.collection("meetingsMeta");
+    const query = meetingsRef
+      .where("status", "==", "not set")
+      .where("confirmer.uid", "==", this.props.user.uid);
     const meetingList = [];
     try {
-      const meetingSnap = await meetingsMetaRef.get();
-      if (!meetingSnap.empty) {
-        meetingSnap.forEach(doc => {
+      const dataSnap = await query.get();
+      if (!dataSnap.empty) {
+        dataSnap.forEach(doc => {
           const data = doc.data();
-          console.log(data);
-          const filteredData = data.meeters.filter(
-            value =>
-              value.uid == this.props.user.uid && data.status == "not set"
-          );
-          if (filteredData.length) {
-            meetingsRef
-              .doc(doc.id)
-              .get()
-              .then(childSnap => {
-                const childData = childSnap.data();
-                if (childData.requester.uid != this.props.user.uid) {
-                  meetingList.push({ ...childData, Id: doc.id });
-                }
-              });
-          } 
+          if (data.requester.uid != this.props.user.uid) {
+            meetingList.push({ ...data, Id: doc.id });
+          }
         });
       }
     } catch (err) {
       console.log(err);
     } finally {
-      if(meetingList.length){
+      this.props.updateLoader(null);
+      if (meetingList.length) {
         this.props.updateMeetingList(meetingList);
-      }
-      else{
-        this.props.updateLoader(null);  
+      } else {
         ActionCreater(
-              "info",
-              "No Pending Requests",
-              <div>
-                <p>There are no pending requests</p>
-              </div>
-            );
+          "info",
+          "No Pending Requests",
+          <div>
+            <p>There are no pending requests</p>
+          </div>
+        );
       }
     }
   };
@@ -208,7 +196,12 @@ class Meetings extends Component {
           meetingList.map((meetingItem, index) => (
             <Card
               className="meeting-card"
-              cover={<img src={meetingItem.requester.images[0]} />}
+              cover={
+                <img
+                  src={meetingItem.requester.images[0]}
+                  style={{ borderRadius: "5px 5px 0px 0px" }}
+                />
+              }
               ref={ele => {
                 this.Card = ele;
               }}

@@ -5,7 +5,7 @@ import { connect } from "react-redux";
 import { Redirect, Link } from "react-router-dom";
 import "antd/dist/antd.css";
 import "./dashboard.css";
-import {ActionCreater} from '../../Helpers/Actions/action';
+import { ActionCreater } from "../../Helpers/Actions/action";
 import defaultAvatar from "../../Helpers/Images/default Avatar.jpg";
 import {
   authActions,
@@ -27,15 +27,17 @@ class Dasboard extends Component {
       profileSet: true,
       setMeeting: true,
       isNotifationListOpen: null,
-      notifications: true,
+      notifications: [],
       loading: null,
       profile: props.profile
     };
   }
 
-  componentDidMount() {
-    const { profile } = this.state;
-    if (!profile) this.handleValidateProfile();
+  async componentDidMount() {
+    const { profile, currentAuth } = this.state;
+    if (!(profile && currentAuth.uid == profile.uid))
+      await this.handleValidateProfile();
+    this.handleValidateRequests();
   }
 
   handleValidateProfile = async () => {
@@ -59,30 +61,38 @@ class Dasboard extends Component {
     }
   };
 
-  handleNotification = props => {
+  handleValidateRequests = async () => {
+    const meetingsRef = fireStore.collection("meetings");
+    const query = meetingsRef
+      .where("confirmer.uid", "==", `${this.state.currentAuth.uid}`)
+      .where("status", "==", "not set");
     let notifications = [];
-    if (props.meetingList && props.meetingList.length) {
-      notifications = props.meetingList.map(value => {
-        return {
-          title: value.requester.nickName,
-          description: `${
-            value.requester.nickName
-          } requested for the meeting at ${value.location.name} on ${new Date(
-            value.date
-          ).toLocaleDateString()}`,
-          avatar: value.requester.images[0]
-        };
-      });
-    }
-    return notifications;
+    (await query.get()).forEach(doc => {
+      const data = doc.data();
+      const noticationObj = {
+        title: data.requester.nickName,
+        description: `${data.requester.nickName} requested for the meeting at ${
+          data.location.name
+        } on ${new Date(data.date).toLocaleDateString()}`,
+        avatar: data.requester.images[0],
+        uid: doc.id
+      };
+      notifications = notifications.concat(noticationObj);
+    });
+    this.setState({ notifications });
+  };
+
+  handleNotificationClick = (e, id) => {
+    e.preventDefault()
+    if(id)
+    this.props.history.push(`/dashboard/meetings#${id}`);
   };
 
   componentWillReceiveProps(nextProps) {
     this.setState({
-      notifications: this.handleNotification(nextProps),
       loading: nextProps.loader,
       currentAuth: nextProps.user,
-      profile:nextProps.profile
+      profile: nextProps.profile
     });
   }
 
@@ -166,25 +176,9 @@ class Dasboard extends Component {
                   }}
                 />
               </Tooltip>
-              <List
-                itemLayout="horizontal"
-                className={
-                  "notification-list " +
-                  (isNotifationListOpen ? "notifications-open" : "") +
-                  (notifications ? " notifications" : "")
-                }
-                dataSource={notifications}
-                renderItem={item => (
-                  <List.Item>
-                    <List.Item.Meta
-                      avatar={<Avatar src={item.avatar} />}
-                      title={<a href="#">{item.title}</a>}
-                      description={item.description}
-                      className="notification-item"
-                    />
-                  </List.Item>
-                )}
-              />
+              <div className="meeting-notifications">
+                {this.renderMeetingNotification()}
+              </div>
               <Icon
                 className="trigger"
                 type={this.state.headerMenu ? "menu-unfold" : "menu-fold"}
@@ -323,6 +317,48 @@ class Dasboard extends Component {
       <Footer style={{ textAlign: "center" }}>
         Extreme Design Studio ©2018 Created by Adnan Hussain
       </Footer>
+    );
+  };
+
+  renderMeetingNotification = () => {
+    const { isNotifationListOpen, notifications } = this.state;
+    return (
+      <List
+        itemLayout="horizontal"
+        className={
+          "notification-list " +
+          (isNotifationListOpen ? "notifications-open" : "") +
+          (notifications ? " notifications" : "")
+        }
+        dataSource={notifications}
+        renderItem={item => (
+          <List.Item
+            onClick={e => {
+              this.handleNotificationClick(e, item.uid);
+            }}
+            className="notification-item"
+          >
+            <List.Item.Meta
+              onClick={e => {
+                this.handleNotificationClick(e, item.uid);
+              }}
+              avatar={<Avatar src={item.avatar} />}
+              title={
+                <a
+                  href="#"
+                  onClick={e => {
+                    this.handleNotificationClick(e, item.uid);
+                  }}
+                >
+                  {item.title}
+                </a>
+              }
+              description={item.description}
+              className="notification-item"
+            />
+          </List.Item>
+        )}
+      />
     );
   };
 }

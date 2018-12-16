@@ -35,7 +35,8 @@ class SetMeeting extends Component {
       currentStep: 1,
       users: null,
       wizardComplete: null,
-      currentUserdata: null,
+      currentAuth: props.user,
+      profile:props.profile,
       meetupOne: null,
       searchPlace: "",
       meetingPoints: [],
@@ -50,58 +51,48 @@ class SetMeeting extends Component {
     };
   }
 
+  componentWillReceiveProps(nextProps) {
+    this.setState({
+      loading: nextProps.loader,
+      currentAuth: nextProps.user,
+      profile: nextProps.profile
+    });
+  }
+
   async componentDidMount() {
     NotificationCreater(
       "info",
       `Welcome to set a meeting module`,
       `A 3 steps easy process in which you have to select and save different steps`
     );
-    this.handleFetchMeetingPlaces();
-    await this.handleFetchCurrentAuthDataFireStore();
+    this.props.updateLoader(true);
     await this.handleFetchUsers();
   }
 
-  handleFetchCurrentAuthDataFireStore = async () => {
-    this.props.updateLoader(true);
-    const userProfileRef = fireStore.collection("usersProfile");
-    const currentUserdata = (await userProfileRef
-      .doc(this.props.user.uid)
-      .get()).data();
-    this.setState({
-      currentUserdata: { ...currentUserdata, uid: this.props.user.uid }
-    });
-  };
-
   handleFetchUsers = async () => {
-    const { currentUserdata } = this.state;
+    const { profile } = this.state;
     const users = [];
     const collectionRef = fireStore.collection("usersProfile");
     try {
       const usersSnapshot = await collectionRef.get();
-      console.log(currentUserdata.uid);
       usersSnapshot.forEach(doc => {
-        if (doc.id !== currentUserdata.uid) {
+        if (doc.id !== profile.uid) {
           const data = doc.data();
           const interest = data["interest"];
           const durations = data["durations"];
           let hasInterest = null;
           let hasDurations = null;
           for (let index = 0; index < interest.length; index++) {
-            if (currentUserdata.interest.includes(interest[index])) {
+            if (profile.interest.includes(interest[index])) {
               hasInterest = true;
             }
-          }
-
-          for (let index = 0; index < durations.length; index++) {
-            if (currentUserdata.durations.includes(durations[index])) {
+            if (profile.durations.includes(durations[index])) {
               hasDurations = true;
             }
-          }
-
-          if (
+          }if (
             hasInterest &&
             hasDurations &&
-            this.getDistance(data.coords, currentUserdata.coords) <= 5
+            this.getDistance(data.coords, profile.coords) <= 5
           ) {
             users.push(data);
           }
@@ -111,6 +102,7 @@ class SetMeeting extends Component {
       console.log(err);
     } finally {
       this.props.updateLoader(null);
+      this.handleFetchMeetingPlaces();
     }
     this.setState({ users });
   };
@@ -340,17 +332,17 @@ class SetMeeting extends Component {
       meetupOne,
       meetingLocation,
       selectedDate,
-      currentUserdata
+      profile
     } = this.state;
     const meetingData = {
-      requester: currentUserdata,
+      requester: profile,
       confirmer: meetupOne,
       location: meetingLocation,
       date: new Date(selectedDate).getTime(),
       status: "not set"
     };
     const meetingsMetaData = {
-      meeters: [currentUserdata, meetupOne],
+      meeters: [profile, meetupOne],
       status: "not set"
     };
     console.log("meetingData", "meetingsMetaData");
@@ -382,9 +374,9 @@ class SetMeeting extends Component {
   };
 
   handleGetDirections = () => {
-    const { currentUserdata, meetingPoints, selectedMeetingPoint } = this.state;
+    const { profile, meetingPoints, selectedMeetingPoint } = this.state;
     const DirectionsService = new google.maps.DirectionsService();
-    console.log("Postion one=>", currentUserdata.coords);
+    console.log("Postion one=>", profile.coords);
     console.log("Postion two=>", {
       latitude: meetingPoints[selectedMeetingPoint].location.lat,
       longitude: meetingPoints[selectedMeetingPoint].location.lng
@@ -392,8 +384,8 @@ class SetMeeting extends Component {
     DirectionsService.route(
       {
         origin: new google.maps.LatLng(
-          currentUserdata.coords.latitude,
-          currentUserdata.coords.longitude
+          profile.coords.latitude,
+          profile.coords.longitude
         ),
         destination: new google.maps.LatLng(
           meetingPoints[selectedMeetingPoint].location.lat,
@@ -433,21 +425,27 @@ class SetMeeting extends Component {
   };
 
   render() {
-    const { currentStep, totalSteps, nextStep, wizardComplete } = this.state;
+    const { currentStep, users } = this.state;
     return (
       <div className="wizard-setmeeting">
-        <h3 style={{ textAlign: "center", marginBottom: "30px" }}>
-          Set a meeting
-        </h3>
-        {this.renderWizard()}
-        {this.renderSteps(currentStep)}
-        {this.renderWizardActions()}
+        {users && users.length > 0 ? (
+          <div>
+            <h3 style={{ textAlign: "center", marginBottom: "30px" }}>
+              Set a meeting
+            </h3>
+            {this.renderWizard()}
+            {this.renderSteps(currentStep)}
+            {this.renderWizardActions()}
+          </div>
+        ) : (
+          <h3 style={{ textAlign: "center" }}>No Favourite persons</h3>
+        )}
       </div>
     );
   }
 
   renderWizardActions = () => {
-    const { currentStep,nextStep, wizardComplete } = this.state;
+    const { currentStep, nextStep, wizardComplete } = this.state;
     return (
       <div className="wizard-actions">
         <Button
@@ -511,67 +509,58 @@ class SetMeeting extends Component {
     const { users } = this.state;
     return (
       <div className="card-container">
-        {users && (
-          <h3 style={{ marginBottom: "8px;", textAlign: "center" }}>
-            Select the person you want to meet
-          </h3>
-        )}
-        {!users && (
-          <h3 style={{ marginBottom: "8px;", textAlign: "center" }}>
-            No Favourite persons
-          </h3>
-        )}
+        <h3 style={{ marginBottom: "8px;", textAlign: "center" }}>
+          Select the person you want to meet
+        </h3>
         <div className="cards-deck">
-          {users && (
-            <Cards onEnd={this.handleOnUsersDataEnd} className="master-root">
-              {users.map((item, index) => (
-                <DeckCard
-                  onSwipeLeft={e => {
-                    this.handleOnUserReject(index);
-                  }}
-                  onSwipeRight={e => {
-                    this.handleOnUserAccept(index);
-                  }}
+          <Cards onEnd={this.handleOnUsersDataEnd} className="master-root">
+            {users.map((item, index) => (
+              <DeckCard
+                onSwipeLeft={e => {
+                  this.handleOnUserReject(index);
+                }}
+                onSwipeRight={e => {
+                  this.handleOnUserAccept(index);
+                }}
+              >
+                <AntdCard
+                  className="user-card"
+                  hoverable
+                  style={{ width: "100%", height: "100%" }}
+                  cover={
+                    <Carousel autoplay>
+                      {item.images.map((image, index) => (
+                        <img
+                          alt="userImg"
+                          src={image}
+                          style={{ width: "100%", height: "100%" }}
+                          id={index}
+                        />
+                      ))}
+                    </Carousel>
+                  }
                 >
-                  <AntdCard
-                    className="user-card"
-                    hoverable
-                    style={{ width: "100%", height: "100%" }}
-                    cover={
-                      <Carousel autoplay>
-                        {item.images.map((image, index) => (
-                          <img
-                            alt="userImg"
-                            src={image}
-                            style={{ width: "100%", height: "100%" }}
-                            id={index}
-                          />
-                        ))}
-                      </Carousel>
-                    }
+                  <Meta title={item.nickName} description={item.nickName} />
+                  <div
+                    className="cancel-user"
+                    onClick={() => {
+                      console.log("Cancel");
+                    }}
                   >
-                    <Meta title={item.nickName} description={item.nickName} />
-                    <div
-                      className="cancel-user"
-                      onClick={() => {
-                        console.log("Cancel");
-                      }}
-                    >
-                      <img src={cancelIcon} />
-                    </div>
-                    <div
-                      className="accept-user"
-                      onClick={() => {
-                        console.log("Accept");
-                      }}
-                    >
-                      <img src={tickIcon} />
-                    </div>
-                  </AntdCard>
-                </DeckCard>
-              ))}
-            </Cards>
-          )}
+                    <img src={cancelIcon} />
+                  </div>
+                  <div
+                    className="accept-user"
+                    onClick={() => {
+                      console.log("Accept");
+                    }}
+                  >
+                    <img src={tickIcon} />
+                  </div>
+                </AntdCard>
+              </DeckCard>
+            ))}
+          </Cards>
         </div>
       </div>
     );
@@ -695,7 +684,7 @@ class SetMeeting extends Component {
   renderMap = () => {
     const {
       directions,
-      currentUserdata,
+      profile,
       meetingPoints,
       selectedMeetingPoint
     } = this.state;
@@ -709,7 +698,7 @@ class SetMeeting extends Component {
             containerElement={<div style={{ height: `100%` }} />}
             mapElement={<div style={{ height: `100%` }} />}
             directions={directions}
-            position1={currentUserdata.coords}
+            position1={profile.coords}
             position2={{
               latitude: meetingPoints[selectedMeetingPoint].location.lat,
               longitude: meetingPoints[selectedMeetingPoint].location.lng
@@ -741,7 +730,8 @@ const MapComponent = withScriptjs(
 const mapStateToProps = state => {
   return {
     user: state.authReducers.user,
-    loader: state.miscellaneousReducers.loader
+    loader: state.miscellaneousReducers.loader,
+    profile:state.authReducers.profile
   };
 };
 
@@ -749,7 +739,7 @@ const mapDispatchToProps = dispatch => {
   return {
     updateUser: user => dispatch(authActions.updateUser(user)),
     removeUser: () => dispatch(authActions.removeUser()),
-    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data))
+    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data)),
   };
 };
 

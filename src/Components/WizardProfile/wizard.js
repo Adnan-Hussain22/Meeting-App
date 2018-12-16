@@ -252,7 +252,8 @@ class Profile extends Component {
         images: images,
         interest: Beverages,
         durations: Durations,
-        coords: coords
+        coords: coords,
+        uid: this.props.user.uid
       };
       await fireStore
         .collection("usersProfile")
@@ -263,9 +264,9 @@ class Profile extends Component {
         "Data uploaded successfully",
         "Profile data uploaded successfully"
       );
+      await this.props.handleValidateProfile();
       this.props.handleupdateNavigation("3");
       this.props.history.push("/dashboard/Set_Meetings");
-      this.props.handleValidateProfile();
     } catch (err) {
       ActionCreater("error", "Error!!", `${err}`);
       console.log("Error While Uploading Data => ", err);
