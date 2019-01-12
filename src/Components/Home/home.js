@@ -18,11 +18,15 @@ class Home extends Component {
       profile: props.profile,
       currentAuth: props.user,
       loader: false,
-      recentMeeting: [],
+      datedFetchedRecentMeetings: null,
+      recentMeeting: null,
       currentPage: 0,
       meetingsDone: [],
       meetingsRequested: [],
-      meetingsPending: []
+      meetingsRejected: [],
+      meetingsDoneLimit: 5,
+      meetingsRequestedLimit: 5,
+      meetingsRejectedLimit: 5
     };
   }
 
@@ -42,17 +46,9 @@ class Home extends Component {
     }
   }
 
-  range(start, end) {
-    const result = [];
-    for (let i = start; i < end; i++) {
-      result.push(i);
-    }
-    return result;
-  }
-
   disabledDate(current) {
     // Can not select days before today and today
-    return current && current < moment().endOf("day");
+    return current && current > moment().endOf("day");
   }
 
   handleDateDiff(first, second) {
@@ -67,56 +63,46 @@ class Home extends Component {
     // const user  = new Date(userDate);
   }
 
-  handleFetchRecentMeetings = (dates = null) => {
-    const meetingsRef = fireStore.collection("meetings");
-    const meetingsRefQuery = meetingsRef
-      .where("status", "==", "Accepted")
-      .orderBy("date", "asc");
-    if (dates == null) {
-      console.log("Fetching without condition");
-      let dateArray = [];
-      meetingsRefQuery
-        .limit(5)
-        .get()
-        .then(res => {
-          res.forEach(doc => {
-            dateArray = dateArray.concat({ ...doc.data() });
-          });
-          this.setState({ recentMeeting: dateArray });
-        });
-      return;
-    }
-    console.log("fetching with condition");
-    let recentArray = [];
-    meetingsRefQuery
-      .get()
-      .then(res => {
-        res.forEach(doc => {
+  //fetch the recent meetings
+  //either auto or ranged if the date are mentioned
+  handleFetchRecentMeetings = async (dates = null) => {
+    try {
+      console.log(
+        dates ? "Fetching with condition" : "Fetching without condition"
+      );
+      const meetingsRef = fireStore.collection("meetings");
+      let recentMeetings = [];
+      if (dates) {
+        const query = meetingsRef
+          .where("status", "==", "Accepted")
+          .where("date", ">=", dates[0])
+          .where("date", "<=", dates[1]);
+        const snap = await query.get();
+        snap.forEach(doc => {
           const data = doc.data();
-          const date_d = new Date(data.date);
-          if (date_d >= dates[0] && date_d <= dates[1]) {
-            console.log("conditioned true");
-            recentArray = recentArray.concat(data);
-          }
+          recentMeetings = recentMeetings.concat(data);
         });
-        if (recentArray.length) this.setState({ recentMeeting: recentArray });
-        else
-          NotificationCreater(
-            "warning",
-            "No data found!",
-            "No data found as per the dates"
-          );
-      })
-      .catch(err => {
-        console.log(err);
-      });
+      } else {
+
+        const snap = await meetingsRef.get();
+        snap.forEach(doc => {
+          const data = doc.data();
+          recentMeetings = recentMeetings.concat(data);
+        });
+      }
+      console.log(recentMeetings);
+      this.setState({ recentMeeting: recentMeetings });
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   handleFetchDatedMeetings = dates => {
     if (dates.length) {
+      this.setState({ datedFetchedRecentMeetings: true, recentMeeting: null });
       const dates_d = [];
-      dates_d.push(dates[0]._d);
-      dates_d.push(dates[1]._d);
+      dates_d.push(new Date(dates[0]._d).getTime());
+      dates_d.push(new Date(dates[1]._d).getTime());
       console.log("fetching new data=>", dates_d);
       this.handleFetchRecentMeetings(dates_d);
     }
@@ -124,80 +110,140 @@ class Home extends Component {
 
   handleFetchMeetingsMeta = () => {
     this.handleFetchDoneMeetings();
-    this.handleFetchPendingMeetings();
+    this.handleFetchRejectedMeetings();
     this.handleFetchRequestedMeetings();
   };
 
-  handleFetchDoneMeetings = () => {
-    const { currentAuth } = this.state;
+  handleFetchDoneMeetings = async () => {
+    const { currentAuth, meetingsDoneLimit } = this.state;
     const meetingsRef = fireStore.collection("meetings");
-    const query = meetingsRef.where("status", "==", "Done");
-    query.get().then(res => {
-      let resArray = [];
-      res.forEach(doc => {
-        const data = doc.data();
-        if (data.requester.uid == currentAuth.uid) {
-          resArray = resArray.concat({
-            user: data.confirmer,
-            location: data.location
-          });
-        } else if (data.confirmer.uid == currentAuth.uid) {
-          resArray = resArray.concat({
-            user: data.requester,
-            location: data.location
-          });
-        }
+    try {
+      const query = meetingsRef
+        .where("status", "==", "Done")
+        .limit(meetingsDoneLimit);
+      query.onSnapshot(snap => {
+        let resArray = [];
+        snap.forEach(doc => {
+          const data = doc.data();
+          if (data.requester.uid == currentAuth.uid) {
+            resArray = resArray.concat({
+              user: data.confirmer,
+              location: data.location
+            });
+          } else if (data.confirmer.uid == currentAuth.uid) {
+            resArray = resArray.concat({
+              user: data.requester,
+              location: data.location
+            });
+          }
+        });
+        if (resArray.length) this.setState({ meetingsDone: [...resArray] });
       });
-      if (resArray.length) this.setState({ meetingsDone: [...resArray] });
-    });
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  handleFetchRequestedMeetings = () => {
-    const { currentAuth } = this.state;
+  handleFetchRequestedMeetings = async () => {
+    const { currentAuth, meetingsRequestedLimit } = this.state;
     const meetingsRef = fireStore.collection("meetings");
-    const query = meetingsRef.where("status", "==", "not set");
-    query.get().then(res => {
-      let resArray = [];
-      res.forEach(doc => {
-        const data = doc.data();
-        if (data.requester.uid == currentAuth.uid) {
-          resArray = resArray.concat({
-            user: data.confirmer,
-            location: data.location
+    try {
+      const query = meetingsRef
+        .where("status", "==", "not set")
+        .where("requester.uid", "==", currentAuth.uid)
+        .limit(meetingsRequestedLimit);
+      query.onSnapshot(snap => {
+        let resArray = [];
+        snap.forEach(doc => {
+          const data = doc.data();
+          if (data.requester.uid == currentAuth.uid) {
+            resArray = resArray.concat({
+              user: data.confirmer,
+              location: data.location
+            });
+          } else if (data.confirmer.uid == currentAuth.uid) {
+            resArray = resArray.concat({
+              user: data.requester,
+              location: data.location
+            });
+          }
+        });
+        if (resArray.length)
+          this.setState({
+            meetingsRequested: [...resArray]
           });
-        } else if (data.confirmer.uid == currentAuth.uid) {
-          resArray = resArray.concat({
-            user: data.requester,
-            location: data.location
-          });
-        }
       });
-      if (resArray.length) this.setState({ meetingsRequested: [...resArray] });
-    });
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  handleFetchPendingMeetings = () => {
-    const { currentAuth } = this.state;
+  handleFetchRejectedMeetings = () => {
+    const { currentAuth, meetingsRejectedLimit } = this.state;
     const meetingsRef = fireStore.collection("meetings");
-    const query = meetingsRef.where("status", "==", "Accepted");
-    query.get().then(res => {
-      let resArray = [];
-      res.forEach(doc => {
-        const data = doc.data();
-        if (data.requester.uid == currentAuth.uid) {
-          resArray = resArray.concat({
-            user: data.confirmer,
-            location: data.location
-          });
-        } else if (data.confirmer.uid == currentAuth.uid) {
-          resArray = resArray.concat({
-            user: data.requester,
-            location: data.location
-          });
-        }
+    try {
+      const query = meetingsRef
+        .where("status", "==", "Rejected")
+        .limit(meetingsRejectedLimit);
+      query.onSnapshot(snap => {
+        let resArray = [];
+        snap.forEach(doc => {
+          const data = doc.data();
+          if (data.requester.uid == currentAuth.uid) {
+            resArray = resArray.concat({
+              user: data.confirmer,
+              location: data.location
+            });
+          } else if (data.confirmer.uid == currentAuth.uid) {
+            resArray = resArray.concat({
+              user: data.requester,
+              location: data.location
+            });
+          }
+        });
+        if (resArray.length) this.setState({ meetingsRejected: [...resArray] });
       });
-      if (resArray.length) this.setState({ meetingsPending: [...resArray] });
-    });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  //validate which data should be fetched more regarding statistics
+  //either requester, rejected or done
+  handleValidateMoreFetchedStatistics = type => {
+    console.log("handleValidateMoreFetchedStatistics==>", type);
+    switch (type) {
+      case "done": {
+        console.log("fetching done");
+        this.setState(
+          { meetingsDoneLimit: this.state.meetingsDoneLimit * 2 },
+          () => {
+            this.handleFetchDoneMeetings();
+          }
+        );
+        break;
+      }
+      case "req": {
+        console.log("fetching requested");
+        this.setState(
+          { meetingsDoneLimit: this.state.meetingsRequestedLimit * 2 },
+          () => {
+            this.handleFetchRecentMeetings();
+          }
+        );
+        break;
+      }
+      case "pend": {
+        console.log("fetching rejected");
+        this.setState(
+          { meetingsDoneLimit: this.state.meetingsRejectedLimit * 2 },
+          () => {
+            this.handleFetchRejectedMeetings();
+          }
+        );
+        break;
+      }
+    }
   };
 
   handleUpdateNavigation = () => {
@@ -271,17 +317,11 @@ class Home extends Component {
               }
               description={
                 <span style={{ color: "black" }}>
-                  Ant Design, a design language for background applications, is
-                  refined by Ant UED Team
+                  Extreme Design Studio ©2018, All rights reserved
                 </span>
               }
             />
           </List.Item>
-          {/* <DatePicker
-            format="YYYY-MM-DD HH:mm:ss"
-            disabledDate={this.disabledDate}
-            className="event-date"
-          /> */}
           <RangePicker
             renderExtraFooter={() => ""}
             showTime
@@ -289,9 +329,28 @@ class Home extends Component {
             className="event-date"
             onOk={this.handleFetchDatedMeetings}
           />
+          <Button
+            type="primary"
+            disabled={
+              !(
+                this.state.datedFetchedRecentMeetings &&
+                this.state.recentMeeting
+              )
+            }
+            onClick={() => {
+              this.setState({
+                datedFetchedRecentMeetings: false,
+                recentMeeting: null
+              });
+              this.handleFetchRecentMeetings();
+            }}
+          >
+            Reset
+          </Button>
         </div>
         <div className="md-col-6 events">
-          {recentMeeting.length > 0 && (
+          {!recentMeeting && this.renderCardSkeleton()}
+          {recentMeeting && recentMeeting.length > 0 && (
             <div>
               {this.renderRecentMeetings()}
               <Pagination
@@ -306,7 +365,9 @@ class Home extends Component {
               />
             </div>
           )}
-          {!recentMeeting && <h4>No Recent Meetings</h4>}
+          {recentMeeting && !recentMeeting.length && (
+            <h4 style={{ textAlign: "center" }}>No Recent Meetings</h4>
+          )}
         </div>
       </div>
     );
@@ -354,28 +415,31 @@ class Home extends Component {
     );
   };
 
+  renderCardSkeleton = () => {
+    return <Card loading={true} className="card"/>
+  };
+
   //method to render information about meetings
   renderMeetingsMeta = () => {
-    const { meetingsDone, meetingsPending, meetingsRequested } = this.state;
-    console.log(meetingsDone.length);
+    const { meetingsDone, meetingsRejected, meetingsRequested } = this.state;
     return (
       <div className="meetings-meta">
-        {this.renderMetaCard(meetingsDone, "Done Meetings")}
-        {this.renderMetaCard(meetingsRequested, "Requested Meetings")}
-        {this.renderMetaCard(meetingsPending, "Pending Meetings")}
+        {this.renderMetaCard(meetingsDone, "Done Meetings", "done")}
+        {this.renderMetaCard(meetingsRequested, "Requested Meetings", "req")}
+        {this.renderMetaCard(meetingsRejected, "Rejected Meetings", "pend")}
       </div>
     );
   };
 
   //method to render meetings meta in cards
-  renderMetaCard = (data, type) => {
+  renderMetaCard = (data, text, type) => {
     return (
       <Card
         style={{ minHeight: 300, border: "1px solid" }}
         className="meta-card"
         style={{ width: "cal(100%/3)" }}
       >
-        <div className="meta-type">{type}</div>
+        <div className="meta-type">{text}</div>
         <div className="total">
           <span>{data.length}</span>
         </div>
@@ -392,7 +456,13 @@ class Home extends Component {
           )}
         </div>
         <div className="button">
-          <Button size={"large"} disabled={data.length == 0}>
+          <Button
+            size={"large"}
+            disabled={data.length == 0}
+            onClick={() => {
+              this.handleValidateMoreFetchedStatistics(type);
+            }}
+          >
             More
           </Button>
         </div>

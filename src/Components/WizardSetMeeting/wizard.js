@@ -36,7 +36,7 @@ class SetMeeting extends Component {
       users: null,
       wizardComplete: null,
       currentAuth: props.user,
-      profile:props.profile,
+      profile: props.profile,
       meetupOne: null,
       searchPlace: "",
       meetingPoints: [],
@@ -78,6 +78,7 @@ class SetMeeting extends Component {
       usersSnapshot.forEach(doc => {
         if (doc.id !== profile.uid) {
           const data = doc.data();
+          console.log("data==>", data);
           const interest = data["interest"];
           const durations = data["durations"];
           let hasInterest = null;
@@ -86,10 +87,13 @@ class SetMeeting extends Component {
             if (profile.interest.includes(interest[index])) {
               hasInterest = true;
             }
+          }
+          for (let index = 0; index < durations.length; index++) {
             if (profile.durations.includes(durations[index])) {
               hasDurations = true;
             }
-          }if (
+          }
+          if (
             hasInterest &&
             hasDurations &&
             this.getDistance(data.coords, profile.coords) <= 5
@@ -325,15 +329,11 @@ class SetMeeting extends Component {
     }
   };
 
-  handleSaveAllSteps = () => {
+  handleSaveAllSteps = async () => {
+    this.props.updateLoader(true);
     const meetingsMetaRef = fireStore.collection("meetingsMeta");
     const meetingsRef = fireStore.collection("meetings");
-    const {
-      meetupOne,
-      meetingLocation,
-      selectedDate,
-      profile
-    } = this.state;
+    const { meetupOne, meetingLocation, selectedDate, profile } = this.state;
     const meetingData = {
       requester: profile,
       confirmer: meetupOne,
@@ -345,26 +345,23 @@ class SetMeeting extends Component {
       meeters: [profile, meetupOne],
       status: "not set"
     };
-    console.log("meetingData", "meetingsMetaData");
-    console.log(meetingData, meetingsMetaData);
-    meetingsMetaRef
-      .add(meetingsMetaData)
-      .then(doc => meetingsRef.doc(doc.id).set(meetingData))
-      .then(() => {
-        ActionCreater(
-          "success",
-          "Data Saved",
-          `Data successfully save and the notification to the selected person has been sent`
-        );
-      })
-      .catch(err => {
-        ActionCreater(
-          "error",
-          "Failed to save the data",
-          `Failed to save the data may be your connection was interreupted please check your network connection and try again`
-        );
-        console.log("Error Saving Data", err);
-      });
+    try {
+      const docId = (await meetingsMetaRef.add(meetingsMetaData)).id;
+      await meetingsRef.doc(docId).set(meetingData);
+      ActionCreater(
+        "success",
+        "Data Saved",
+        `Data successfully save and the notification to the selected person has been sent`
+      );
+    } catch (err) {
+      ActionCreater(
+        "error",
+        "Failed to save the data",
+        `Failed to save the data may be your connection was interreupted please check your network connection and try again`
+      );
+    } finally {
+      this.props.updateLoader(false);
+    }
   };
 
   handleGetMap = () => {
@@ -731,7 +728,7 @@ const mapStateToProps = state => {
   return {
     user: state.authReducers.user,
     loader: state.miscellaneousReducers.loader,
-    profile:state.authReducers.profile
+    profile: state.authReducers.profile
   };
 };
 
@@ -739,7 +736,7 @@ const mapDispatchToProps = dispatch => {
   return {
     updateUser: user => dispatch(authActions.updateUser(user)),
     removeUser: () => dispatch(authActions.removeUser()),
-    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data)),
+    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data))
   };
 };
 

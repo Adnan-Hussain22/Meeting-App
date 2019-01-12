@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import ReactDOM from "react-dom";
 import { connect } from "react-redux";
 import AddToCalendar from "react-add-to-calendar";
 import "react-add-to-calendar/dist/react-add-to-calendar.css";
@@ -9,7 +8,6 @@ import {
   miscellaneousActions
 } from "../../Redux/Actions";
 import { ActionCreater } from "../../Helpers/Actions/action";
-import defaultAvatar from "../../Helpers/Images/default Avatar.jpg";
 import {
   Card,
   Button,
@@ -18,7 +16,8 @@ import {
   Icon,
   Tooltip,
   Modal,
-  Popconfirm
+  Popconfirm,
+  Pagination
 } from "antd";
 import { fireStore } from "../../Config/firebase";
 import {
@@ -37,7 +36,10 @@ class Meetings extends Component {
     super(props);
     this.state = {
       loading: false,
-      meetingList: props.meetingList,
+      meetingList: null,
+      currentAuth: props.user,
+      filteredMeetingList: null,
+      paginatedList: null,
       isOpenMapModal: false,
       isOpenCalenderModal: false,
       directions: false,
@@ -47,9 +49,38 @@ class Meetings extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    this.setState({ meetingList: nextProps.meetingList });
+    this.setState(
+      {
+        meetingList: nextProps.meetingList,
+        currentAuth: nextProps.user
+      },
+      () => {
+        if (this.state.meetingList)
+          this.handleFilterMeetingList(
+            this.props.location.hash,
+            nextProps.meetingList
+          );
+      }
+    );
   }
 
+  //filter the meeting list of the bases notification selected
+  handleFilterMeetingList = (id, meetingList) => {
+    let filteredMeetingList = [...meetingList];
+    if (id) {
+      filteredMeetingList = _.filter(meetingList, function(elem) {
+        return elem.Id == id;
+      });
+    }
+    if (!filteredMeetingList.length) filteredMeetingList = [...meetingList];
+    this.setState({ filteredMeetingList }, () => {
+      this.handleGetNextPageData(1, 10);
+    });
+  };
+
+  //fetch all pending meetings from db
+  // the data include the data which is atleast matches
+  // to one item of interest and duration of current user
   handleFetchMeetings = async (id = null) => {
     const meetingsRef = fireStore.collection("meetings");
     const query = meetingsRef
@@ -66,13 +97,8 @@ class Meetings extends Component {
           }
         });
       }
-    } catch (err) {
-      console.log(err);
-    } finally {
-      this.props.updateLoader(null);
-      if (meetingList.length) {
-        this.props.updateMeetingList(meetingList);
-      } else {
+      this.props.updateMeetingList(meetingList);
+      if (!meetingList.length) {
         ActionCreater(
           "info",
           "No Pending Requests",
@@ -81,11 +107,31 @@ class Meetings extends Component {
           </div>
         );
       }
+    } catch (err) {
+    } finally {
+      this.props.updateLoader(null);
     }
+  };
+
+  //get the next page data
+  // when next btn is selected
+  handleGetNextPageData = (page, pageSize) => {
+    const { filteredMeetingList } = this.state;
+    const End =
+      page * pageSize <= filteredMeetingList.length
+        ? page * pageSize
+        : filteredMeetingList.length;
+    const start = page * pageSize - 10;
+    let data = [];
+    for (let i = start; i < End; i++) {
+      data = data.concat(filteredMeetingList[i]);
+    }
+    this.setState({ paginatedList: data });
   };
 
   componentDidMount() {
     this.props.updateLoader(true);
+    this.props.updateMeetingList(null);
     this.handleFetchMeetings();
   }
 
@@ -98,10 +144,13 @@ class Meetings extends Component {
     });
   };
 
+  //to cancel a request
   handleCancelRequest = id => {
     this.handleUpdateMeetingStatus(id, "Rejected");
   };
 
+  //to meeting status either the user accepts
+  // or reject the meeting
   handleUpdateMeetingStatus = async (id, status) => {
     const meetingsRef = fireStore
       .collection("meetings")
@@ -117,6 +166,7 @@ class Meetings extends Component {
     }
   };
 
+  //to accept the user request
   handleOnAcceptRequest = id => {
     const { meetingList } = this.state;
     const event = {
@@ -136,6 +186,7 @@ class Meetings extends Component {
     this.setState({ isOpenCalenderModal: true, event });
   };
 
+  //opens the map
   handleOpenMap = (elem, id) => {
     const { meetingList } = this.state;
     this.setState({
@@ -145,6 +196,7 @@ class Meetings extends Component {
     });
   };
 
+  //
   handleGetDirections = () => {
     const { position1, position2 } = this.state;
     const DirectionsService = new google.maps.DirectionsService();
@@ -178,100 +230,143 @@ class Meetings extends Component {
   };
 
   render() {
+    const { paginatedList } = this.state;
     return (
       <div className="meetings">
-        {this.renderMeetingCards()}
+        {paginatedList && paginatedList.length > 0 && (
+          <h2 style={{ textAlign: "center" }}>Pending Meetings</h2>
+        )}
+        {paginatedList && !paginatedList.length > 0 && (
+          <h2 style={{ textAlign: "center" }}>No Pending Requests</h2>
+        )}
+        {!paginatedList && this.renderCardSkeletons()}
+        {paginatedList && paginatedList.length > 0 && this.renderMeetingCards()}
         {this.renderMapModal()}
         {this.renderAddToCalenderModal()}
       </div>
     );
   }
 
-  renderMeetingCards = () => {
-    const { meetingList, loading } = this.state;
+  //render the loding card
+  renderCardSkeletons = () => {
     return (
-      <div>
-        {meetingList &&
-          meetingList.length > 0 &&
-          meetingList.map((meetingItem, index) => (
-            <Card
-              className="meeting-card"
-              cover={
-                <img
-                  src={meetingItem.requester.images[0]}
-                  style={{ borderRadius: "5px 5px 0px 0px" }}
-                />
-              }
-              ref={ele => {
-                this.Card = ele;
-              }}
-              actions={[
-                <Tooltip placement="topLeft" title="cancel request">
-                  <Popconfirm
-                    placement="top"
-                    title={"Are you sure you want to cancel the request ?"}
-                    onConfirm={() => {
-                      this.handleCancelRequest(index);
-                    }}
-                    okText="Yes"
-                    cancelText="No"
-                  >
-                    <Icon type="close-circle" className="cancelRequeust-icon" />
-                  </Popconfirm>
-                </Tooltip>,
-                <Tooltip placement="topLeft" title="get directions">
-                  <div
-                    className="direction-icon"
-                    onClick={elem => {
-                      this.handleOpenMap(elem, index);
-                    }}
-                  >
-                    <i class="fas fa-map-marker-alt" />
-                  </div>
-                </Tooltip>,
-                <Tooltip placement="topLeft" title="accept request">
-                  <Popconfirm
-                    placement="top"
-                    title={"Are you sure you want to accept the request ?"}
-                    onConfirm={() => this.handleOnAcceptRequest(index)}
-                    okText="Yes"
-                    cancelText="No"
-                  >
-                    <Icon type="check-circle" className="acceptRequeust-icon" />
-                  </Popconfirm>
-                </Tooltip>
-              ]}
-            >
-              <Skeleton loading={loading} avatar active>
-                <Meta
-                  avatar={
-                    <div className="avatars">
-                      <Avatar src={meetingItem.confirmer.images[0]} />
-                    </div>
-                  }
-                  title={meetingItem.requester.nickName}
-                  description={
-                    <div>
-                      <span>Location : {meetingItem.location.name}</span> <br />
-                      <span>
-                        Date : {new Date(meetingItem.date).toLocaleDateString()}
-                      </span>
-                      <br />
-                      <span>
-                        Time : {new Date(meetingItem.date).toLocaleTimeString()}
-                      </span>
-                      <br />
-                      <span>Status : {meetingItem.status}</span>
-                    </div>
-                  }
-                />
-              </Skeleton>
-            </Card>
-          ))}
+      <div className="skeletons">
+        <Card loading={true} className="card" />
+        <Card loading={true} className="card" />
+        <Card loading={true} className="card" />
       </div>
     );
   };
 
+  //render the requests data in card
+  renderMeetingCards = () => {
+    const { paginatedList, loading } = this.state;
+    return (
+      <div>
+        <div className="meeting-list">
+          {paginatedList &&
+            paginatedList.length > 0 &&
+            paginatedList.map((meetingItem, index) => (
+              <Card
+                className="meeting-card"
+                cover={
+                  <img
+                    src={meetingItem.requester.images[0]}
+                    style={{ borderRadius: "5px 5px 0px 0px" }}
+                  />
+                }
+                ref={ele => {
+                  this.Card = ele;
+                }}
+                actions={[
+                  <Tooltip placement="topLeft" title="cancel request">
+                    <Popconfirm
+                      placement="top"
+                      title={"Are you sure you want to cancel the request ?"}
+                      onConfirm={() => {
+                        this.handleCancelRequest(index);
+                      }}
+                      okText="Yes"
+                      cancelText="No"
+                    >
+                      <Icon
+                        type="close-circle"
+                        className="cancelRequeust-icon"
+                      />
+                    </Popconfirm>
+                  </Tooltip>,
+                  <Tooltip placement="topLeft" title="get directions">
+                    <div
+                      className="direction-icon"
+                      onClick={elem => {
+                        this.handleOpenMap(elem, index);
+                      }}
+                    >
+                      <i class="fas fa-map-marker-alt" />
+                    </div>
+                  </Tooltip>,
+                  <Tooltip placement="topLeft" title="accept request">
+                    <Popconfirm
+                      placement="top"
+                      title={"Are you sure you want to accept the request ?"}
+                      onConfirm={() => this.handleOnAcceptRequest(index)}
+                      okText="Yes"
+                      cancelText="No"
+                    >
+                      <Icon
+                        type="check-circle"
+                        className="acceptRequeust-icon"
+                      />
+                    </Popconfirm>
+                  </Tooltip>
+                ]}
+              >
+                <Skeleton loading={loading} avatar active>
+                  <Meta
+                    avatar={
+                      <div className="avatars">
+                        <Avatar src={meetingItem.confirmer.images[0]} />
+                      </div>
+                    }
+                    title={meetingItem.requester.nickName}
+                    description={
+                      <div>
+                        <span>Location : {meetingItem.location.name}</span>{" "}
+                        <br />
+                        <span>
+                          Date :{" "}
+                          {new Date(meetingItem.date).toLocaleDateString()}
+                        </span>
+                        <br />
+                        <span>
+                          Time :{" "}
+                          {new Date(meetingItem.date).toLocaleTimeString()}
+                        </span>
+                        <br />
+                        <span>Status : {meetingItem.status}</span>
+                      </div>
+                    }
+                  />
+                </Skeleton>
+              </Card>
+            ))}
+        </div>
+        {/* render Pagination */}
+        {this.state.filteredMeetingList &&
+          this.state.filteredMeetingList.length > 0 && (
+            <div className="paging">
+              <Pagination
+                defaultCurrent={1}
+                total={this.state.filteredMeetingList.length}
+                onChange={this.handleGetNextPageData}
+              />
+            </div>
+          )}
+      </div>
+    );
+  };
+
+  //rendes the map in modal
   renderMapModal = () => {
     const { isOpenMapModal } = this.state;
     return (
@@ -295,6 +390,7 @@ class Meetings extends Component {
     );
   };
 
+  //renders the map
   renderMap = () => {
     const { isOpenMapModal, directions, position1, position2 } = this.state;
     return (
@@ -325,6 +421,7 @@ class Meetings extends Component {
     );
   };
 
+  //add the meeting date to calender
   renderAddToCalenderModal = () => {
     const { isOpenCalenderModal } = this.state;
 
@@ -340,7 +437,12 @@ class Meetings extends Component {
         }}
         className="mettingPlace-modal"
         footer={[
-          <Button key="back" onClick={this.isOpenCalenderModal}>
+          <Button
+            key="back"
+            onClick={() => {
+              this.setState({ isOpenCalenderModal: false });
+            }}
+          >
             Back
           </Button>,
           <AddToCalendar

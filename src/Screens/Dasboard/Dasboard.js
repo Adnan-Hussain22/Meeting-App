@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import ReactDOM from "react-dom";
 import DasboardRoutes from "../../Config/Routes/DashboardRoutes.js";
 import { connect } from "react-redux";
 import { Redirect, Link } from "react-router-dom";
@@ -38,6 +37,11 @@ class Dasboard extends Component {
     if (!(profile && currentAuth.uid == profile.uid))
       await this.handleValidateProfile();
     this.handleValidateRequests();
+    const user = this.props.user;
+      this.props.updateUser({
+        ...user,
+        uid: "2AC3RxeQGzO29NT7XfemWO7MYGO1"
+      });
   }
 
   handleValidateProfile = async () => {
@@ -193,10 +197,6 @@ class Dasboard extends Component {
               <Menu.Item key="1" onClick={this.handleLogout}>
                 <Icon type="poweroff" theme="outlined" />
                 Logout
-              </Menu.Item>
-              <Menu.Item key="2">
-                <Icon type="eye" theme="outlined" />
-                Some other menu
               </Menu.Item>
             </Menu>
           </div>

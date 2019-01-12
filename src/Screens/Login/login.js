@@ -67,7 +67,7 @@ class Login extends Component {
               Eye on Eye
             </h1>
             <h2>Meetings</h2>
-            <h4 style={{ fontWeight: 1000 }}>LEARN. LEAD. CONNECT</h4>
+            <h4 style={{ fontWeight: 1000 }}>LEARN, LEAD, CONNECT</h4>
           </div>
           <div className="fb-login">
             <Button type="primary" block onClick={this.handleLoginWithFb}>

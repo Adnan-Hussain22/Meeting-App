@@ -271,7 +271,7 @@ class Profile extends Component {
       ActionCreater("error", "Error!!", `${err}`);
       console.log("Error While Uploading Data => ", err);
     } finally {
-      this.props.updateLoader(null);
+      this.props.updateLoader(false);
     }
   };
 

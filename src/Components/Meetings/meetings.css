@@ -1,10 +1,18 @@
-.meetings > div {
+.meetings .meeting-list {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.meetings .paging {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
 }
 .meetings .meeting-card {
   width: 300px;
+  margin-left: 10px;
+  margin-right: 10px;
   margin-top: 16px;
   box-shadow: 0px 0px 10px 3px #9e9898;
   border-radius: 5px;
@@ -52,4 +60,17 @@
 
 .react-add-to-calendar__dropdown ul {
   padding: 10px;
+}
+
+.skeletons {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.skeletons .card {
+  width: 300px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
