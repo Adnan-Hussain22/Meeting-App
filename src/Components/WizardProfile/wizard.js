@@ -53,7 +53,30 @@ class Profile extends Component {
     };
   }
 
-  componentDidMount() {}
+  componentDidMount() {
+    this.handleGetProfile();
+  }
+
+  // get the profile info if already added
+  handleGetProfile = () => {
+    const { profile } = this.props;
+    if (profile) {
+      const { coords, interest, durations, nickName, contact } = profile;
+      const stepOneValidated = { validated: true };
+      const stepTwoValidated = { validated: true };
+      const stepThreeValidated = { validated: true };
+      this.setState({
+        coords,
+        Beverages: [...interest],
+        Durations: [...durations],
+        nickName,
+        contact,
+        stepOneValidated,
+        stepTwoValidated,
+        stepThreeValidated
+      });
+    }
+  };
 
   //Method to preview the image on the model
   handlePreview = file => {
@@ -126,7 +149,7 @@ class Profile extends Component {
     if (step < totalSteps) {
       switch (step) {
         case 1: {
-          if (!stepOneValidated.validated) {
+          if (!stepOneValidated || !stepOneValidated.validated) {
             this.handleSaveStep1();
             return;
           }
@@ -134,7 +157,7 @@ class Profile extends Component {
           break;
         }
         case 2: {
-          if (!stepTwoValidated.validated) {
+          if (!stepTwoValidated || !stepTwoValidated.validated) {
             this.handleSaveStep2();
             return;
           }
@@ -142,7 +165,7 @@ class Profile extends Component {
           break;
         }
         case 3: {
-          if (!stepThreeValidated.validated) {
+          if (!stepThreeValidated || !stepThreeValidated.validated) {
             this.handleSaveStep3();
             return;
           }
@@ -749,6 +772,7 @@ class Profile extends Component {
             <CheckboxGroup
               options={beverages}
               onChange={this.handleInterestBeverageChange}
+              value={this.state.Beverages}
             />
           </FormItem>
         </div>
@@ -760,6 +784,7 @@ class Profile extends Component {
             <CheckboxGroup
               options={mettingDuration}
               onChange={this.handleInterestsDurationChange}
+              value={this.state.Durations}
             />
           </FormItem>
         </div>
@@ -817,7 +842,8 @@ const MyMapComponent = withScriptjs(
 const mapStateToProps = state => {
   return {
     user: state.authReducers.user,
-    loader: state.miscellaneousReducers.loader
+    loader: state.miscellaneousReducers.loader,
+    profile: state.authReducers.profile
   };
 };
 
@@ -825,7 +851,8 @@ const mapDispatchToProps = dispatch => {
   return {
     updateUser: user => dispatch(authActions.updateUser(user)),
     removeUser: () => dispatch(authActions.removeUser()),
-    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data))
+    updateLoader: data => dispatch(miscellaneousActions.updateLoader(data)),
+    updateProfile: data => dispatch(authActions.updateProfile(data))
   };
 };
 
