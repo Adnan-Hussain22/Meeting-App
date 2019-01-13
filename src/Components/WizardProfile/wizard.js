@@ -22,7 +22,6 @@ import {
 import "antd/dist/antd.css";
 import "./wizard.css";
 import firebase, { fireStore } from "../../Config/firebase";
-import { strict } from "assert";
 import {
   ActionCreater,
   NotificationCreater
@@ -47,7 +46,10 @@ class Profile extends Component {
       nextStep: false,
       fileList: [],
       coords: null,
-      wizardComplete: false
+      wizardComplete: false,
+      stepOneValidated: null,
+      stepTwoValidated: null,
+      stepThreeValidated: null
     };
   }
 
@@ -72,7 +74,7 @@ class Profile extends Component {
   beforeUpload(file) {
     const isJPG = file.type === "image/jpeg" || "image/png" || "image/jpg";
     if (!isJPG) {
-      message.error("You can only upload JPG file!");
+      message.error("You can only upload JPEG | PNG | JPG file!");
     }
     const isLt20M = file.size / 1024 / 1024 < 20;
     if (!isLt20M) {
@@ -114,8 +116,41 @@ class Profile extends Component {
   };
 
   handleNextStep = () => {
-    const { step, totalSteps } = this.state;
-    if (step < totalSteps) this.setState({ step: step + 1, nextStep: false });
+    const {
+      step,
+      totalSteps,
+      stepOneValidated,
+      stepTwoValidated,
+      stepThreeValidated
+    } = this.state;
+    if (step < totalSteps) {
+      switch (step) {
+        case 1: {
+          if (!stepOneValidated.validated) {
+            this.handleSaveStep1();
+            return;
+          }
+          this.setState({ step: step + 1, nextStep: false });
+          break;
+        }
+        case 2: {
+          if (!stepTwoValidated.validated) {
+            this.handleSaveStep2();
+            return;
+          }
+          this.setState({ step: step + 1, nextStep: false });
+          break;
+        }
+        case 3: {
+          if (!stepThreeValidated.validated) {
+            this.handleSaveStep3();
+            return;
+          }
+          this.setState({ step: step + 1, nextStep: false });
+          break;
+        }
+      }
+    }
   };
 
   handleBackWizard = () => {
@@ -155,12 +190,16 @@ class Profile extends Component {
 
   handleInterestBeverageChange = checkedValues => {
     console.log("handleInterestBeverageChange=>", checkedValues);
-    this.setState({ Beverages: checkedValues });
+    this.setState({ Beverages: checkedValues }, () => {
+      this.handleValidateBeverages();
+    });
   };
 
   handleInterestsDurationChange = checkedValues => {
     console.log("handleInterestsDurationChange=>", checkedValues);
-    this.setState({ Durations: checkedValues });
+    this.setState({ Durations: checkedValues }, () => {
+      this.handleValidateDurationSlots();
+    });
   };
 
   handleSetMapPosition = () => {
@@ -198,24 +237,74 @@ class Profile extends Component {
 
   //Method to validate and save step 1
   handleSaveStep1 = e => {
-    const { contact, nickName } = this.state;
-    if (contact && nickName) {
-      this.setState({ nextStep: true });
-      console.log("contact=>", contact);
-      console.log("nickName=>", nickName);
+    const { stepOneValidated } = this.state;
+    console.log("handleSaveStep1==>", stepOneValidated);
+    //if the feild is untouched so first validate that one
+    if (
+      !stepOneValidated ||
+      !stepOneValidated.nickName ||
+      !stepOneValidated.contact
+    ) {
+      this.handleValidateName();
+      setTimeout(() => {
+        this.handleValidatePhoneNo();
+      }, 80);
+      return;
     }
+    if (stepOneValidated.nickName.help || stepOneValidated.contact.help) {
+      this.handleValidateName();
+      setTimeout(() => {
+        this.handleValidatePhoneNo();
+      }, 80);
+      return;
+    }
+    this.setState({
+      nextStep: true,
+      stepOneValidated: { ...stepOneValidated, validated: true }
+    });
   };
 
   //Method to validate and save step 2
   handleSaveStep2 = e => {
-    const { fileList } = this.state;
-    if (fileList.length) this.setState({ nextStep: true });
+    const { stepTwoValidated } = this.state;
+    if (this.handleValidateUserImages()) {
+      this.setState({
+        nextStep: true,
+        stepTwoValidated: { ...stepTwoValidated, validated: true }
+      });
+    }
   };
 
   //Method to validate and save step 3
   handleSaveStep3 = e => {
-    const { Beverages, Durations } = this.state;
-    if (Beverages.length && Durations.length) this.setState({ nextStep: true });
+    const { stepThreeValidated } = this.state;
+    console.log("handleSaveStep3==>", stepThreeValidated);
+    //if the feild is untouched so first validate that one
+    if (
+      !stepThreeValidated ||
+      !stepThreeValidated.beverages ||
+      !stepThreeValidated.durations
+    ) {
+      this.handleValidateBeverages();
+      setTimeout(() => {
+        this.handleValidateDurationSlots();
+      }, 80);
+      return;
+    }
+    if (
+      stepThreeValidated.beverages.help ||
+      stepThreeValidated.durations.help
+    ) {
+      this.handleValidateBeverages();
+      setTimeout(() => {
+        this.handleValidateDurationSlots();
+      }, 80);
+      return;
+    }
+    this.setState({
+      nextStep: true,
+      stepTwoValidated: { ...stepThreeValidated, validated: true }
+    });
   };
 
   handleSaveStep4 = e => {
@@ -392,12 +481,166 @@ class Profile extends Component {
     else return title3;
   };
 
+  //=================================================================//
+  //=========================VALIDATONS=============================//
+  //===============================================================//
+
+  //--------------------------Step one-----------------------------//
+
+  //validate nick name
+  handleValidateName = () => {
+    const { nickName, stepOneValidated } = this.state;
+    console.log("handleValidateName=>", stepOneValidated);
+    if (!nickName) {
+      const stepOneValidated_d = {
+        ...stepOneValidated,
+        nickName: {
+          hasFeedback: true,
+          validateStatus: "error",
+          help: "Please input your nick name"
+        },
+        validated: false
+      };
+      this.setState({ stepOneValidated: stepOneValidated_d });
+      return;
+    }
+    const stepOneValidated_d = {
+      ...stepOneValidated,
+      nickName: {
+        hasFeedback: true,
+        validateStatus: "success"
+      },
+      validated: true
+    };
+    this.setState({ stepOneValidated: stepOneValidated_d });
+  };
+
+  //validate contact no
+  handleValidatePhoneNo = () => {
+    const { stepOneValidated, contact } = this.state;
+    console.log("handleValidatePhoneNo=>", stepOneValidated);
+    const contactRegex = /^((\+92)|(0092))-{0,1}\d{3}-{0,1}\d{7}$|^\d{11}$|^\d{4}-\d{7}$/;
+    if (!contact || !contact.match(contactRegex)) {
+      const stepOneValidated_d = {
+        ...stepOneValidated,
+        contact: {
+          hasFeedback: true,
+          validateStatus: "error",
+          help: "Please input valid PK contact number"
+        },
+        validated: false
+      };
+      this.setState({ stepOneValidated: stepOneValidated_d });
+      return;
+    }
+    const stepOneValidated_d = {
+      ...stepOneValidated,
+      contact: {
+        hasFeedback: true,
+        validateStatus: "success"
+      },
+      validated: true
+    };
+    this.setState({ stepOneValidated: stepOneValidated_d });
+  };
+
+  //--------------------------End of Step one-----------------------------//
+
+  //----------------------------Step two-----------------------------------//
+
+  //validate user images
+  handleValidateUserImages = () => {
+    const { fileList } = this.state;
+    if (!fileList.length || fileList.length < 3) {
+      const stepTwoValidated = {
+        images: {
+          validateStatus: "error",
+          help: "Please upload three images"
+        },
+        validated: false
+      };
+      this.setState({ stepTwoValidated });
+      return false;
+    }
+    this.setState({ stepTwoValidated: { images: null, validated: true } });
+    return true;
+  };
+
+  //--------------------------End of Step one-----------------------------//
+
+  //----------------------------Step Three-----------------------------------//
+
+  //validate beverages selected
+  handleValidateBeverages = () => {
+    console.log("handleValidateBeverages==>", this.state.Beverages);
+    const { Beverages, stepThreeValidated } = this.state;
+    if (Beverages.length < 2) {
+      const stepThreeValidated_d = {
+        ...stepThreeValidated,
+        beverages: {
+          hasFeedback: true,
+          validateStatus: "error",
+          help: "Please select atleast three"
+        },
+        validated: false
+      };
+      this.setState({ stepThreeValidated: stepThreeValidated_d });
+      return;
+    }
+    const stepThreeValidated_d = {
+      ...stepThreeValidated,
+      beverages: {
+        hasFeedback: true,
+        validateStatus: "success"
+      },
+      validated: true
+    };
+    this.setState({ stepThreeValidated: stepThreeValidated_d });
+  };
+
+  //validate user images
+  handleValidateDurationSlots = () => {
+    const { Durations, stepThreeValidated } = this.state;
+    if (Durations.length < 2) {
+      const stepThreeValidated_d = {
+        ...stepThreeValidated,
+        durations: {
+          hasFeedback: true,
+          validateStatus: "error",
+          help: "Please select atleast three"
+        },
+        validated: false
+      };
+      this.setState({ stepThreeValidated: stepThreeValidated_d });
+      return;
+    }
+    const stepThreeValidated_d = {
+      ...stepThreeValidated,
+      durations: {
+        hasFeedback: true,
+        validateStatus: "success"
+      },
+      validated: true
+    };
+    this.setState({ stepThreeValidated: stepThreeValidated_d });
+  };
+
+  //--------------------------End of Step Three-----------------------------//
+
+  //===============================================================//
+  //=====================END OF VALIDATONS========================//
+  //=============================================================//
+
   renderUserInfo = () => {
-    const { nickName, contact } = this.state;
+    const { nickName, contact, stepOneValidated } = this.state;
+    const validationName = stepOneValidated ? stepOneValidated.nickName : null;
+    const validationContact = stepOneValidated
+      ? stepOneValidated.contact
+      : null;
     return (
       <div className="user-info">
         <Form onSubmit={() => false} className="login-form">
-          <FormItem>
+          <FormItem {...validationName}>
             {
               <Input
                 prefix={
@@ -407,13 +650,15 @@ class Profile extends Component {
                 placeholder="Nick Name"
                 value={nickName}
                 onChange={e => {
-                  this.setState({ nickName: e.target.value });
+                  this.setState({ nickName: e.target.value }, () => {
+                    this.handleValidateName();
+                  });
                 }}
               />
             }
           </FormItem>
           {/* <Icon type="contacts" theme="outlined" /> */}
-          <FormItem>
+          <FormItem {...validationContact}>
             {
               <Input
                 prefix={
@@ -423,7 +668,9 @@ class Profile extends Component {
                 placeholder="Contact No"
                 value={contact}
                 onChange={e => {
-                  this.setState({ contact: e.target.value });
+                  this.setState({ contact: e.target.value }, () => {
+                    this.handleValidatePhoneNo();
+                  });
                 }}
               />
             }
@@ -434,33 +681,21 @@ class Profile extends Component {
   };
 
   renderUserImages = () => {
-    const { loading, images, previewVisible, previewImage } = this.state;
+    const {
+      loading,
+      stepTwoValidated,
+      previewVisible,
+      previewImage
+    } = this.state;
     const uploadButton = (
       <div>
         <Icon type={loading ? "loading" : "plus"} />
         <div className="ant-upload-text">Upload Image</div>
       </div>
     );
+    const validation = stepTwoValidated ? stepTwoValidated.images : null;
     return (
-      // <ul className="userImage-list">
-      //   <li>
-
-      //   </li>
-      // </ul>
-      <div className="userImage-list clearfix">
-        <Upload
-          name="avatar"
-          listType="picture-card"
-          className="avatar-uploader"
-          beforeUpload={this.beforeUpload}
-          fileList={this.state.fileList}
-          onChange={this.handleAvatarChange}
-          customRequest={this.handelUploadedBundle}
-          onPreview={this.handlePreview}
-          accept="image/*"
-        >
-          {this.state.fileList.length >= 3 ? null : uploadButton}
-        </Upload>
+      <div className="user-images">
         <Modal
           visible={previewVisible}
           footer={null}
@@ -470,6 +705,23 @@ class Profile extends Component {
         >
           <img alt="example" style={{ width: "100%" }} src={previewImage} />
         </Modal>
+        <FormItem {...validation}>
+          <div className="userImage-list clearfix">
+            <Upload
+              name="avatar"
+              listType="picture-card"
+              className="avatar-uploader"
+              beforeUpload={this.beforeUpload}
+              fileList={this.state.fileList}
+              onChange={this.handleAvatarChange}
+              customRequest={this.handelUploadedBundle}
+              onPreview={this.handlePreview}
+              accept="image/*"
+            >
+              {this.state.fileList.length >= 3 ? null : uploadButton}
+            </Upload>
+          </div>
+        </FormItem>
       </div>
     );
   };
@@ -480,25 +732,36 @@ class Profile extends Component {
   };
 
   renderUserInterest = () => {
+    const { stepThreeValidated } = this.state;
     const beverages = ["Coffee", "Juice", "Cocktail"];
     const mettingDuration = ["20", "60", "120"];
+    const beveragesValidation = stepThreeValidated
+      ? stepThreeValidated.beverages
+      : null;
+    const durationValidation = stepThreeValidated
+      ? stepThreeValidated.durations
+      : null;
     return (
       <div className="user-interest">
         <div>
           <p>Select Beverages</p>
-          <CheckboxGroup
-            options={beverages}
-            onChange={this.handleInterestBeverageChange}
-          />
+          <FormItem {...beveragesValidation}>
+            <CheckboxGroup
+              options={beverages}
+              onChange={this.handleInterestBeverageChange}
+            />
+          </FormItem>
         </div>
         <br />
         <br />
         <div>
           <p>Meeting Slots</p>
-          <CheckboxGroup
-            options={mettingDuration}
-            onChange={this.handleInterestsDurationChange}
-          />
+          <FormItem {...durationValidation}>
+            <CheckboxGroup
+              options={mettingDuration}
+              onChange={this.handleInterestsDurationChange}
+            />
+          </FormItem>
         </div>
       </div>
     );
