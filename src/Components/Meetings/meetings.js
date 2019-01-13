@@ -133,6 +133,7 @@ class Meetings extends Component {
     this.props.updateLoader(true);
     this.props.updateMeetingList(null);
     this.handleFetchMeetings();
+    this.props.handleupdateNavigation('4');
   }
 
   handleCloseModel = () => {

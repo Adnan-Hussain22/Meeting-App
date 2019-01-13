@@ -55,6 +55,7 @@ class Profile extends Component {
 
   componentDidMount() {
     this.handleGetProfile();
+    this.props.handleupdateNavigation('2');
   }
 
   // get the profile info if already added

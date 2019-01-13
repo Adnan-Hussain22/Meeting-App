@@ -67,6 +67,7 @@ class SetMeeting extends Component {
     );
     this.props.updateLoader(true);
     await this.handleFetchUsers();
+    this.props.handleupdateNavigation('3');
   }
 
   handleFetchUsers = async () => {

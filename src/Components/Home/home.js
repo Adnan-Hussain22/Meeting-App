@@ -43,6 +43,7 @@ class Home extends Component {
     if (profile) {
       this.handleFetchRecentMeetings();
       this.handleFetchMeetingsMeta();
+      this.props.handleupdateNavigation('1');
     }
   }
 

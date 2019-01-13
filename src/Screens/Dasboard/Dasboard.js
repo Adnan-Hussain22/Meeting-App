@@ -21,7 +21,7 @@ class Dasboard extends Component {
 
     this.state = {
       currentAuth: props.user,
-      navigation: "1",
+      navigation: "2",
       headerMenu: false,
       profileSet: true,
       setMeeting: true,
@@ -37,13 +37,44 @@ class Dasboard extends Component {
     if (!(profile && currentAuth.uid == profile.uid))
       await this.handleValidateProfile();
     this.handleValidateRequests();
-    const user = this.props.user;
-      this.props.updateUser({
-        ...user,
-        uid: "2AC3RxeQGzO29NT7XfemWO7MYGO1"
-      });
+    this.handleValidateNavigation();
   }
 
+  //validate the url
+  // than update the navigation menu
+  handleValidateNavigation = () => {
+    const route = this.props.location.pathname;
+    switch (route) {
+      case "/dashboard": {
+        this.handleupdateNavigation('1');
+        break;
+      }
+      case "/dashboard/": {
+        this.handleupdateNavigation('1');
+        break;
+      }
+      case "/dashboard/profile": {
+        this.handleupdateNavigation('2');
+        break;
+      }
+      case "/dashboard/Set_Meetings": {
+        this.handleupdateNavigation('3');
+        break;
+      }
+      case "/dashboard/Meetings": {
+        this.handleupdateNavigation('4');
+        break;
+      }
+      default:{
+        //unselect the route
+        //if the route not exists
+        this.handleupdateNavigation('100');
+      }
+    }
+  };
+
+  //validate if the profile is setup or not
+  //if not than ask the user to fist setup the profile
   handleValidateProfile = async () => {
     const { currentAuth } = this.state;
     if (currentAuth) {
@@ -65,6 +96,7 @@ class Dasboard extends Component {
     }
   };
 
+  //get the requested meetings of the user
   handleValidateRequests = async () => {
     const meetingsRef = fireStore.collection("meetings");
     const query = meetingsRef
@@ -87,9 +119,8 @@ class Dasboard extends Component {
   };
 
   handleNotificationClick = (e, id) => {
-    e.preventDefault()
-    if(id)
-    this.props.history.push(`/dashboard/meetings#${id}`);
+    e.preventDefault();
+    if (id) this.props.history.push(`/dashboard/meetings#${id}`);
   };
 
   componentWillReceiveProps(nextProps) {
@@ -285,22 +316,6 @@ class Dasboard extends Component {
     return (
       <Content style={{ margin: "24px 16px 0" }} className="main-content">
         <div style={{ padding: 24, background: "#fff", minHeight: 360 }}>
-          {/* {!profileSet && (
-                <WizardProfile
-                  handleSetProfile={this.handleSetProfile}
-                  handleValidateNavigation={this.handleValidateNavigation}
-                />
-              )}
-              {profileSet && !setMeeting && (
-                <WizardSetMeeting
-                  handleValidateNavigation={this.handleValidateNavigation}
-                />
-              )}
-              {setMeeting && (
-                <Meetings
-                  handleValidateNavigation={this.handleValidateNavigation}
-                />
-              )} */}
           <DasboardRoutes
             handleupdateNavigation={this.handleupdateNavigation}
             handleValidateProfile={this.handleValidateProfile}
