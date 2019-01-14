@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import moment from "moment";
 import { connect } from "react-redux";
+import { withRouter } from "react-router-dom";
 import {
   NotificationCreater,
   ActionCreater
@@ -43,7 +44,7 @@ class Home extends Component {
     if (profile) {
       this.handleFetchRecentMeetings();
       this.handleFetchMeetingsMeta();
-      this.props.handleupdateNavigation('1');
+      this.props.handleupdateNavigation("1");
     }
   }
 
@@ -84,7 +85,6 @@ class Home extends Component {
           recentMeetings = recentMeetings.concat(data);
         });
       } else {
-
         const snap = await meetingsRef.get();
         snap.forEach(doc => {
           const data = doc.data();
@@ -417,7 +417,7 @@ class Home extends Component {
   };
 
   renderCardSkeleton = () => {
-    return <Card loading={true} className="card"/>
+    return <Card loading={true} className="card" />;
   };
 
   //method to render information about meetings
@@ -505,7 +505,9 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Home);
+export default withRouter(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(Home)
+);

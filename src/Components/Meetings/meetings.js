@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
+import { withRouter } from "react-router-dom";
 import AddToCalendar from "react-add-to-calendar";
 import "react-add-to-calendar/dist/react-add-to-calendar.css";
 import {
@@ -133,7 +134,7 @@ class Meetings extends Component {
     this.props.updateLoader(true);
     this.props.updateMeetingList(null);
     this.handleFetchMeetings();
-    this.props.handleupdateNavigation('4');
+    this.props.handleupdateNavigation("4");
   }
 
   handleCloseModel = () => {
@@ -505,7 +506,9 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Meetings);
+export default withRouter(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(Meetings)
+);

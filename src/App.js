@@ -1,7 +1,8 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import {updateUser,removeUser} from './Redux/Actions/authActions';
-import IndexRoutes from './Config/Routes'
+import { updateUser, removeUser } from "./Redux/Actions/authActions";
+import IndexRoutes from "./Config/Routes";
+import { withRouter } from "react-router-dom";
 class App extends Component {
   constructor(props) {
     super();
@@ -11,37 +12,19 @@ class App extends Component {
     };
   }
 
-  componentWillReceiveProps(nextProps){
-    console.log(nextProps.user)
-    if(nextProps.user){
-      this.setState({currentAuth:nextProps.user})
+  componentWillReceiveProps(nextProps) {
+    console.log(nextProps.user);
+    if (nextProps.user) {
+      this.setState({ currentAuth: nextProps.user });
     }
   }
-
-  // static getDerivedStateFromPops(props, state) {
-  //   console.log(props.user);
-  //     return { currentAuth: props.user };
-  // }
-
-  // handleLogin = currentAuth => {
-  //   const user = {
-  //     userName: currentAuth.displayName,
-  //     avatar: currentAuth.photoURL,
-  //     uid: currentAuth.uid
-  //   };
-  //   this.setState({ currentAuth: user });
-  // };
-
   componentDidMount() {}
 
   render() {
-    const { currentAuth } = this.state;
     return (
-        <div className="App">
-          {/* {!currentAuth && <Login />}
-          {currentAuth && <Dasboard />} */}
-          <IndexRoutes/>
-        </div>
+      <div className="App">
+        <IndexRoutes />
+      </div>
     );
   }
 }
@@ -54,15 +37,14 @@ const mapStateToProps = state => {
   };
 };
 
-const mapDispatchToProps = (dispatch) => {
-  return{
-    updateUser: user=> dispatch(updateUser(user)),
-    removeUser: ()=> dispatch(removeUser())
-  }
+const mapDispatchToProps = dispatch => {
+  return {
+    updateUser: user => dispatch(updateUser(user)),
+    removeUser: () => dispatch(removeUser())
+  };
 };
 
 export default connect(
   mapStateToProps,
   mapDispatchToProps
 )(App);
-

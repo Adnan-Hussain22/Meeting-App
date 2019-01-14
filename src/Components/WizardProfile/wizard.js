@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
+import { withRouter } from "react-router-dom";
 import { authActions, miscellaneousActions } from "../../Redux/Actions";
 import {
   Card,
@@ -55,7 +56,7 @@ class Profile extends Component {
 
   componentDidMount() {
     this.handleGetProfile();
-    this.props.handleupdateNavigation('2');
+    this.props.handleupdateNavigation("2");
   }
 
   // get the profile info if already added
@@ -857,7 +858,9 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Profile);
+export default withRouter(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(Profile)
+);

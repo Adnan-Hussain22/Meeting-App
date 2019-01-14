@@ -1,7 +1,7 @@
 import React, { Component } from "react";
+import { Redirect, Link, withRouter } from "react-router-dom";
 import DasboardRoutes from "../../Config/Routes/DashboardRoutes.js";
 import { connect } from "react-redux";
-import { Redirect, Link } from "react-router-dom";
 import "antd/dist/antd.css";
 import "./dashboard.css";
 import { ActionCreater } from "../../Helpers/Actions/action";
@@ -46,29 +46,29 @@ class Dasboard extends Component {
     const route = this.props.location.pathname;
     switch (route) {
       case "/dashboard": {
-        this.handleupdateNavigation('1');
+        this.handleupdateNavigation("1");
         break;
       }
       case "/dashboard/": {
-        this.handleupdateNavigation('1');
+        this.handleupdateNavigation("1");
         break;
       }
       case "/dashboard/profile": {
-        this.handleupdateNavigation('2');
+        this.handleupdateNavigation("2");
         break;
       }
       case "/dashboard/Set_Meetings": {
-        this.handleupdateNavigation('3');
+        this.handleupdateNavigation("3");
         break;
       }
       case "/dashboard/Meetings": {
-        this.handleupdateNavigation('4');
+        this.handleupdateNavigation("4");
         break;
       }
-      default:{
+      default: {
         //unselect the route
         //if the route not exists
-        this.handleupdateNavigation('100');
+        this.handleupdateNavigation("100");
       }
     }
   };
@@ -400,7 +400,9 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Dasboard);
+export default withRouter(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(Dasboard)
+);

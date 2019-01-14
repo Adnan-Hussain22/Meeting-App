@@ -1,6 +1,6 @@
 import React, { Component } from "react";
+import { Redirect, withRouter } from "react-router-dom";
 import { Card, Button } from "antd";
-import { Redirect } from "react-router-dom";
 import "antd/dist/antd.css";
 import eyeLogo from "../../Helpers/Images/Eye Logo.jpg";
 import "./login.css";
@@ -93,7 +93,9 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Login);
+export default withRouter(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(Login)
+);

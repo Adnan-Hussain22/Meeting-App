@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
+import { withRouter } from "react-router-dom";
 import { authActions, miscellaneousActions } from "../../Redux/Actions";
 import { Steps, Input, Button, Modal, Icon, Carousel, DatePicker } from "antd";
 import { Card as AntdCard } from "antd";
@@ -67,7 +68,7 @@ class SetMeeting extends Component {
     );
     this.props.updateLoader(true);
     await this.handleFetchUsers();
-    this.props.handleupdateNavigation('3');
+    this.props.handleupdateNavigation("3");
   }
 
   handleFetchUsers = async () => {
@@ -741,7 +742,9 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(SetMeeting);
+export default withRouter(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(SetMeeting)
+);
